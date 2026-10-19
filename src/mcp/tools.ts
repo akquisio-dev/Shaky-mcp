@@ -38,6 +38,20 @@ import {
   templateSchema,
 } from '../core/prep.js';
 import { batchCalculator, batchSchema } from '../core/batch.js';
+import {
+  barStats,
+  checkLinesSchema,
+  checkRecipeLines,
+  findRecipesByIngredient,
+  mixHistory,
+  rateMix,
+  rateMixSchema,
+  suggestPurchases,
+  surpriseMe,
+  surpriseSchema,
+} from '../core/insights.js';
+import { navigate, navigateSchema } from '../core/navigate.js';
+import { checkoutSchema, checkoutShopping } from '../core/shopping.js';
 import { applyPartyShopping, partySchema, planParty } from '../core/party.js';
 import {
   addDietRule,
@@ -50,6 +64,7 @@ import { getAllSettings, settingsSchema, updateSettings } from '../core/settings
 import {
   addIngredient,
   addIngredients,
+  updateIngredients,
   archiveIngredient,
   getExpiring,
   getIngredientView,
@@ -979,6 +994,215 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
       return ok(
         items.map((t) => `${t.id}: ${t.kind} ${t.name}`).join(', ') || 'The trash is empty.',
         { items },
+      );
+    },
+  );
+
+  // ---------- advice & insight ----------
+
+  reg(
+    'check_recipe_lines',
+    {
+      title: 'Check a recipe against the bar',
+      description:
+        'Check a drink you know (not saved) against the bar without saving it: each line available, substituted (with note), unavailable or missing, how many times the stock allows it, missing equipment, strength and cost. Use this before suggesting a drink from your own knowledge. Same line format as save_recipe.',
+      input: checkLinesSchema.shape,
+      readOnly: true,
+    },
+    (a) => {
+      const r = checkRecipeLines(ctx, a);
+      const av = r.availability;
+      return ok(
+        `${a.name ?? 'This drink'}: ${av.status.replace('_', ' ')}${av.missing.length ? `, missing ${av.missing.join(', ')}` : ''}${
+          av.substitutions.length
+            ? `, stand-ins: ${av.substitutions.map((x) => `${x.using} for ${x.line}`).join(', ')}`
+            : ''
+        }${av.servings_possible ? `, enough for ${av.servings_possible}` : ''}. About ${r.strength.abv} %.`,
+        { ...r },
+      );
+    },
+  );
+
+  reg(
+    'find_recipes_by_ingredient',
+    {
+      title: 'Recipes with an ingredient',
+      description:
+        'Saved recipes that use an ingredient, makeable ones first. Pass an ingredient id or exact name to search by that bottle (also covers fuzzy matches), or words like "tequila" or "lime juice".',
+      input: { ingredient: z.union([z.number().int().positive(), z.string().trim().min(1)]) },
+      readOnly: true,
+    },
+    (a) => {
+      const r = findRecipesByIngredient(ctx, a.ingredient);
+      return ok(
+        r.recipes.length
+          ? r.recipes.map((x) => `${x.name} (${x.status.replace('_', ' ')})`).join(', ')
+          : 'No saved recipe uses it. Suggest one from your own knowledge and check it with check_recipe_lines.',
+        { ...r },
+      );
+    },
+  );
+
+  reg(
+    'suggest_purchases',
+    {
+      title: 'What to buy next',
+      description:
+        'Which single purchase unlocks the most saved recipes: unlocks = recipes that become makeable with it, helps = recipes that still miss more. Recipes with avoided ingredients are ignored.',
+      input: { limit: z.number().int().min(1).max(20).default(5) },
+      readOnly: true,
+    },
+    (a) => {
+      const items = suggestPurchases(ctx, a.limit);
+      return ok(
+        items
+          .map(
+            (x) =>
+              `${x.buy}: unlocks ${x.unlocks.length}${x.unlocks.length ? ` (${x.unlocks.join(', ')})` : ''}`,
+          )
+          .join('; ') || 'Every saved recipe is already makeable.',
+        { items },
+      );
+    },
+  );
+
+  reg(
+    'surprise_me',
+    {
+      title: 'Surprise me',
+      description:
+        'A random drink the user can make now, weighted towards favorites, good ratings and bottles to use up, skipping drinks mixed in the last days (not_mixed_for_days, default 3). Filters: tag, alcohol_free, max_abv.',
+      input: surpriseSchema.shape,
+      readOnly: true,
+    },
+    (a) => {
+      const r = surpriseMe(ctx, a);
+      if (!r) return ok('Nothing fits right now. Try fewer filters.', { recipe: null });
+      const x = r.recipe;
+      return ok(`How about a ${x.name}? (${x.strength.abv} %, picked from ${r.from})`, {
+        recipe: {
+          id: x.id,
+          name: x.name,
+          description: x.description,
+          ingredients: x.personal.ingredients,
+          steps: x.personal.steps,
+          abv: x.strength.abv,
+        },
+        candidates: r.from,
+      });
+    },
+  );
+
+  reg(
+    'get_mix_history',
+    {
+      title: 'Mix history',
+      description:
+        'Drinks that were mixed, newest first, with servings, rating, notes and what was deducted. Filter by days and recipe name.',
+      input: {
+        days: z.number().int().min(1).max(3650).optional(),
+        recipe: z.string().optional(),
+        limit: z.number().int().min(1).max(200).default(30),
+      },
+      readOnly: true,
+    },
+    (a) => {
+      const items = mixHistory(ctx, a);
+      return ok(
+        items
+          .map(
+            (m) =>
+              `#${m.id} ${m.made_at.slice(0, 10)} ${m.servings === 1 ? '' : `${m.servings}x `}${m.name}${m.rating ? ` ${m.rating}/5` : ''}`,
+          )
+          .join('\n') || 'Nothing mixed yet.',
+        { items },
+      );
+    },
+  );
+
+  reg(
+    'rate_mix',
+    {
+      title: 'Rate a mixed drink',
+      description:
+        'Add or change the rating (1 to 5) and notes of a mixed drink, by mix id or the latest one. Use it when the user tells you how it tasted.',
+      input: rateMixSchema.shape,
+    },
+    (a) => {
+      const { result, changes } = rateMix(ctx, a);
+      return changed(`Noted for ${result.name}.`, changes, { mix: result });
+    },
+  );
+
+  reg(
+    'bar_stats',
+    {
+      title: 'Bar statistics',
+      description:
+        'Over the last N days (default 30): drinks mixed, top drinks with average rating, consumption per bottle (ml, pieces, cost), spend, standard drinks total and per week, and saved recipes never mixed. Mention the standard drinks gently if they are high.',
+      input: { days: z.number().int().min(1).max(3650).default(30) },
+      readOnly: true,
+    },
+    (a) => {
+      const s = barStats(ctx, a.days);
+      return ok(
+        `Last ${s.days} days: ${s.drinks_mixed} drinks${s.top_drinks.length ? `, most often ${s.top_drinks[0]!.name}` : ''}, about ${s.standard_drinks.per_week} standard drinks a week, spent about ${s.spend.amount} ${s.spend.currency}.`,
+        { ...s },
+      );
+    },
+  );
+
+  reg(
+    'shopping_checkout',
+    {
+      title: 'Bought it: tick off and restock',
+      description:
+        'After shopping: ticks off shopping list items and puts them into stock in one step. Refills the linked or same-named bottle (an empty one becomes a full new one), or creates new_ingredient when it is not in the bar yet.',
+      input: checkoutSchema.shape,
+    },
+    (a) => {
+      const { result, changes } = checkoutShopping(ctx, a);
+      return changed(
+        result.map((x) => `${x.item} -> ${x.stock} (now ${x.quantity})`).join(', '),
+        changes,
+        { done: result },
+      );
+    },
+  );
+
+  reg(
+    'update_ingredients',
+    {
+      title: 'Change several ingredients',
+      description:
+        'Same fields as update_ingredient for up to 100 items in one step (one undo), all or nothing. E.g. move bottles, set prices, fix categories.',
+      input: {
+        items: z
+          .array(z.object({ ingredient: ingredientRef, ...ingredientPatchSchema.shape }))
+          .min(1)
+          .max(100),
+      },
+    },
+    (a) => {
+      const { result, changes } = updateIngredients(ctx, a.items);
+      return changed(`Updated ${result.length} ingredient(s).`, changes, {
+        items: result.map(brief),
+      });
+    },
+  );
+
+  reg(
+    'show_in_web',
+    {
+      title: 'Show in the web UI',
+      description: `Open a page in the user's browser if the web UI is open (${webUrl}): a recipe, the step-by-step "mix for real" view with timers (make), the game (mix), party, shopping list and more. Use it when the user wants to see or follow something.`,
+      input: navigateSchema.shape,
+    },
+    (a) => {
+      const { result } = navigate(ctx, a);
+      return ok(
+        `Opened ${result.view}${result.recipe ? ` for ${result.recipe}` : ''} in the web UI (if it is open: ${webUrl}/${result.route}).`,
+        { ...result },
       );
     },
   );

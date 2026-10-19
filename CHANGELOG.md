@@ -2,6 +2,12 @@
 
 All notable changes to Shaky. The format follows [Keep a Changelog](https://keepachangelog.com/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-19
+
+### Added
+
+- Ten MCP tools (60 in total): `check_recipe_lines` checks a drink the AI knows against the bar without saving it, `find_recipes_by_ingredient`, `suggest_purchases` (which bottle unlocks the most recipes), `surprise_me`, `get_mix_history`, `rate_mix`, `bar_stats` (top drinks, consumption, spend, standard drinks per week), `shopping_checkout` (tick off and restock), `update_ingredients` (batch, one undo) and `show_in_web` (the AI opens a recipe, the step-by-step view, the game or the party page in the open browser).
+
 ## [1.2.0] - 2026-10-19
 
 ### Added

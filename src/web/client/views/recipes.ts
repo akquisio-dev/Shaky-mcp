@@ -21,7 +21,9 @@ let filter: Filter = 'all';
 let search = '';
 let tag = '';
 
-export function setRecipeFilterFromHash(params: URLSearchParams): void {
+let openedFromHash = '';
+
+export function setRecipeFilterFromHash(params: URLSearchParams, rerender: () => void): void {
   const s = params.get('status');
   if (
     s === 'makeable' ||
@@ -31,6 +33,12 @@ export function setRecipeFilterFromHash(params: URLSearchParams): void {
     s === 'use_up'
   )
     filter = s;
+  // #/recipes?open=<id> opens that recipe once (used when the AI shows a recipe).
+  const open = params.get('open');
+  if (open && open !== openedFromHash) {
+    openedFromHash = open;
+    queueMicrotask(() => void openRecipe(Number(open), rerender));
+  } else if (!open) openedFromHash = '';
 }
 
 const amount = formatAmount;

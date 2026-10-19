@@ -26,6 +26,7 @@ Next to the MCP server runs a playful web UI on `localhost`: your bar as a comic
 - **Alcohol free**: a filter for mocktails, plus five examples in `examples/mocktails.json`.
 - **Party mode**: pick drinks for N guests and get amounts, what to buy, the ice you need and when to start freezing it, the cost, and a printable drinks menu. Guest diets are data (vegan: aquafaba instead of egg white; nut allergy: no orgeat).
 - **Safety net**: every change can be undone (a whole "Mixed it!" at once), deleted things wait 30 days in the trash, and every changing tool has a dry run.
+- **More ways for the AI to help**: check any drink it knows against your bar without saving it, find recipes by ingredient, say which bottle to buy next, pick a surprise drink, remember how you liked a drink, show your habits and spend, restock from the shopping list in one step, and open a recipe or the step-by-step view in your browser.
 - **Photo of a label**: send it to Claude and it fills in brand, kind, ABV and size (prompt `add_bottle_from_photo`).
 - **Log a drink, deduct the stock**: exact for bottles with ml, estimated from the fill level otherwise, limes via juice per piece. When a bottle runs out and you have a spare, the next one is opened.
 - **Trainings**: the AI loads a recipe into the mixing game, you mix it, the server scores amounts, order, technique and garnish, and the AI reads the result to coach you.

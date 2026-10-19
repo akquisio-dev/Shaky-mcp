@@ -97,6 +97,20 @@ function sentence(a: Activity, who: string): string {
       : name;
     return de ? `${who} hat rückgängig gemacht: ${what}` : `${who} undid: ${what}`;
   }
+  if (a.entity === 'ui') {
+    return de
+      ? `${who} zeigt dir ${name || 'etwas'}`
+      : `${who} is showing you ${name || 'something'}`;
+  }
+  if (a.entity === 'mix' && a.action === 'rated') {
+    return de ? `${who} hat ${name} bewertet` : `${who} rated ${name}`;
+  }
+  if (a.entity === 'shopping' && a.action === 'done') {
+    return de ? `${who} hat ${name} gekauft` : `${who} bought ${name}`;
+  }
+  if (a.action === 'restocked') {
+    return de ? `${who} hat ${name} aufgefüllt` : `${who} restocked ${name}`;
+  }
   if (a.entity === 'settings') {
     return de
       ? `${who} hat die Einstellung ${String(a.data.key)} geändert`

@@ -147,7 +147,7 @@ function render(): void {
   let view: HTMLElement;
   switch (name) {
     case 'recipes':
-      setRecipeFilterFromHash(params);
+      setRecipeFilterFromHash(params, render);
       view = renderRecipes(render);
       break;
     case 'shopping':
@@ -208,7 +208,7 @@ async function boot() {
       const group = a.group_id;
       const first = group === null || group === undefined || !toastedGroups.has(group);
       if (group !== null && group !== undefined) toastedGroups.add(group);
-      const undoable = a.entity !== 'undo' && a.entity !== 'training' && group != null;
+      const undoable = !['undo', 'training', 'ui'].includes(a.entity) && group != null;
       const ownButWorthIt =
         a.entity === 'mix' ||
         a.action === 'deleted' ||
@@ -228,6 +228,12 @@ async function boot() {
         );
       }
       if (a.entity === 'training') onTrainingActivity(a);
+      // The AI asked to show something: follow it (only for the AI, never loops).
+      if (a.entity === 'ui' && a.action === 'navigate' && a.source !== 'web') {
+        const route = String(a.data.route ?? '');
+        if (route.startsWith('#/')) location.hash = route;
+        return;
+      }
       pending = (pending ?? Promise.resolve())
         .then(() => load(slicesFor(a.entity)))
         .catch(() => undefined);

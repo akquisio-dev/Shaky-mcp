@@ -431,3 +431,22 @@ export function getExpiring(ctx: Ctx, days: number, includeExpired = true) {
     )
     .sort((a, b) => (a.days_left ?? 0) - (b.days_left ?? 0));
 }
+
+/** Changes many ingredients in one step (one undo), all or nothing. */
+export function updateIngredients(
+  ctx: Ctx,
+  items: (IngredientPatch & { ingredient: number | string })[],
+) {
+  return mutate(ctx, () =>
+    items.map(({ ingredient, ...patch }, n) => {
+      try {
+        return updateIngredientFields(ctx, ingredient, patch).result;
+      } catch (e) {
+        throw new ShakyError(
+          'invalid',
+          `Item ${n + 1} (${String(ingredient)}): ${(e as Error).message}`,
+        );
+      }
+    }),
+  );
+}
