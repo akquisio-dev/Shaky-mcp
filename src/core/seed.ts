@@ -4,11 +4,20 @@ import { insertEquipment, insertGlass } from '../db/repos/catalog.js';
 import { findIngredientsByName, insertIngredient } from '../db/repos/ingredients.js';
 import { findRecipeByName, insertRecipe } from '../db/repos/recipes.js';
 import { findOpenShoppingByName, insertShopping } from '../db/repos/misc.js';
-import { findEquipmentByName, findGlassByName, getCategoryDefaults } from '../db/repos/catalog.js';
+import {
+  ensureLocation,
+  findEquipmentByName,
+  findGlassByName,
+  getCategoryDefaults,
+  upsertCategoryDefaults,
+  upsertLocation,
+} from '../db/repos/catalog.js';
 import { mutate, nowIso, type Ctx } from './context.js';
 import {
+  categoryDefaultsInputSchema,
   equipmentInputSchema,
   glassInputSchema,
+  locationInputSchema,
   ingredientInputSchema,
   recipeInputSchema,
   shoppingInputSchema,
@@ -18,8 +27,15 @@ const DAY = 86_400_000;
 
 export const seedFileSchema = z.object({
   ingredients: z
-    .array(ingredientInputSchema.extend({ opened_days_ago: z.number().int().min(0).optional() }))
+    .array(
+      ingredientInputSchema.extend({
+        opened_days_ago: z.number().int().min(0).optional(),
+        archived: z.boolean().optional(),
+      }),
+    )
     .default([]),
+  locations: z.array(locationInputSchema).default([]),
+  category_defaults: z.array(categoryDefaultsInputSchema).default([]),
   equipment: z.array(equipmentInputSchema).default([]),
   glassware: z.array(glassInputSchema).default([]),
   recipes: z.array(recipeInputSchema).default([]),
@@ -54,19 +70,26 @@ export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean } = {}) {
     const now = ctx.now().getTime();
     const added = { ingredients: 0, equipment: 0, glassware: 0, recipes: 0, shopping_list: 0 };
 
+    for (const l of data.locations) upsertLocation(ctx.db, l);
+    for (const c of data.category_defaults) upsertCategoryDefaults(ctx.db, c);
     for (const { opened_days_ago, ...i } of data.ingredients) {
       if (findIngredientsByName(ctx.db, i.name).length) continue;
       const d = getCategoryDefaults(ctx.db, i.category);
+      const location = i.location ?? d?.default_location ?? 'shelf';
+      ensureLocation(ctx.db, location);
       insertIngredient(ctx.db, {
         ...i,
         tags: i.tags ?? [],
-        location: i.location ?? d?.default_location ?? 'shelf',
+        location,
         fill_level: i.fill_level ?? 'full',
         quantity: i.quantity ?? 1,
         opened_at:
           opened_days_ago !== undefined
             ? new Date(now - opened_days_ago * DAY).toISOString()
-            : null,
+            : i.opened_at
+              ? new Date(i.opened_at).toISOString()
+              : null,
+        expires_at: i.expires_at ? new Date(i.expires_at).toISOString() : null,
         created_at: ts,
         updated_at: ts,
       });
@@ -110,6 +133,8 @@ export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean } = {}) {
       });
       added.shopping_list++;
     }
+    const total = Object.values(added).reduce((a, b) => a + b, 0);
+    if (total === 0 && !opts.reset) return added;
     cs.record({
       entity: 'bar',
       entity_id: null,

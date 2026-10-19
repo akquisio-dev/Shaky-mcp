@@ -110,6 +110,15 @@ function header(): HTMLElement {
         settings.theme ?? 'auto',
         d.settings.theme,
       ),
+      select(
+        'units',
+        [
+          ['cl', 'cl'],
+          ['oz', 'oz'],
+        ],
+        settings.units ?? 'cl',
+        d.settings.units,
+      ),
     ),
   );
 }

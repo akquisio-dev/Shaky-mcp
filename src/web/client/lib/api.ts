@@ -76,6 +76,8 @@ export const api = {
   deleteGlass: (id: number) => req<Mut<unknown>>('DELETE', `/glassware/${id}`),
   recipes: () => req<RecipeWithCheck[]>('GET', '/recipes'),
   recipe: (id: number) => req<RecipeWithCheck>('GET', `/recipes/${id}`),
+  addRecipe: (b: object) => req<Mut<RecipeWithCheck>>('POST', '/recipes', b),
+  updateRecipe: (id: number, b: object) => req<Mut<RecipeWithCheck>>('PUT', `/recipes/${id}`, b),
   recipeFlags: (id: number, b: object) => req<Mut<RecipeWithCheck>>('PATCH', `/recipes/${id}`, b),
   deleteRecipe: (id: number) => req<Mut<unknown>>('DELETE', `/recipes/${id}`),
   mix: (b: object) =>
@@ -89,5 +91,8 @@ export const api = {
   updateShopping: (id: number, b: object) => req<Mut<unknown>>('PATCH', `/shopping/${id}`, b),
   deleteShopping: (id: number) => req<Mut<unknown>>('DELETE', `/shopping/${id}`),
   activity: (limit = 100) => req<Activity[]>('GET', `/activity?limit=${limit}`),
+  mixLog: () => req<MixLogEntry[]>('GET', '/mix?limit=30'),
+  importBar: (data: unknown, mode: 'merge' | 'replace') =>
+    req<Mut<unknown>>('POST', '/import', { data, mode }),
   settings: (b: object) => req<Record<string, unknown>>('PATCH', '/settings', b),
 };

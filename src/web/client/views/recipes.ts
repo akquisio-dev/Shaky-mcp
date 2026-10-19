@@ -4,6 +4,8 @@ import { state } from '../lib/store.js';
 import { api, type RecipeWithCheck } from '../lib/api.js';
 import { attempt, openDialog, toast } from '../lib/ui.js';
 import { bottleSvg } from '../svg/art.js';
+import { formatAmount } from '../lib/units.js';
+import { openRecipeForm } from './recipeForm.js';
 
 type Filter = 'all' | 'makeable' | 'missing_one' | 'missing_more' | 'favorites';
 let filter: Filter = 'all';
@@ -15,10 +17,7 @@ export function setRecipeFilterFromHash(params: URLSearchParams): void {
   if (s === 'makeable' || s === 'missing_one' || s === 'missing_more') filter = s;
 }
 
-function amount(a?: number, unit?: string) {
-  if (a === undefined) return '';
-  return `${String(a).replace('.', t().lang === 'de' ? ',' : '.')} ${unit ?? ''}`.trim();
-}
+const amount = formatAmount;
 
 function card(r: RecipeWithCheck, rerender: () => void): HTMLElement {
   const d = t();
@@ -112,7 +111,16 @@ export function renderRecipes(rerender: () => void): HTMLElement {
     h(
       'div',
       { class: 'toolbar' },
-      searchInput,
+      h(
+        'div',
+        { class: 'toolbar-row' },
+        searchInput,
+        h(
+          'button',
+          { class: 'btn btn-primary', type: 'button', onclick: () => openRecipeForm() },
+          `+ ${d.form.newRecipe}`,
+        ),
+      ),
       h(
         'div',
         { class: 'chips' },
@@ -289,6 +297,16 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
         d.recipe.mixed,
       ),
     ),
+    h(
+      'button',
+      {
+        class: 'btn btn-quiet btn-small',
+        type: 'button',
+        onclick: () => (close(), openRecipeForm(r)),
+      },
+      d.common.edit,
+    ),
+    ' ',
     h(
       'button',
       {

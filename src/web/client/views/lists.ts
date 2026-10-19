@@ -2,7 +2,7 @@ import { h } from '../lib/h.js';
 import { describe, label, t } from '../lib/i18n.js';
 import { state } from '../lib/store.js';
 import { api } from '../lib/api.js';
-import { attempt, field } from '../lib/ui.js';
+import { attempt, field, toast } from '../lib/ui.js';
 
 export function renderShopping(): HTMLElement {
   const d = t();
@@ -285,6 +285,88 @@ export function renderActivity(): HTMLElement {
             ),
           )
         : h('p', { class: 'empty-state' }, d.activity.empty),
+    ),
+    state.mixes.length
+      ? h(
+          'section',
+          { class: 'paper' },
+          h('h2', null, d.activity.mixes),
+          h(
+            'ol',
+            { class: 'timeline' },
+            state.mixes.map((m) =>
+              h(
+                'li',
+                { class: 'act' },
+                h('span', { class: 'who who-mcp' }, m.servings === 1 ? '1×' : `${m.servings}×`),
+                h(
+                  'span',
+                  { class: 'what' },
+                  m.name,
+                  m.deducted.length
+                    ? h(
+                        'small',
+                        { class: 'muted' },
+                        ` (${m.deducted.map((x) => x.name).join(', ')})`,
+                      )
+                    : null,
+                ),
+                h('time', { dateTime: m.made_at }, fmt.format(new Date(m.made_at))),
+              ),
+            ),
+          ),
+        )
+      : null,
+    renderBackup(),
+  );
+}
+
+function renderBackup(): HTMLElement {
+  const d = t();
+  const file = h('input', {
+    type: 'file',
+    accept: 'application/json,.json',
+    'aria-label': d.backup.file,
+  });
+  const mode = h(
+    'select',
+    { 'aria-label': d.backup.mode },
+    h('option', { value: 'merge' }, d.backup.merge),
+    h('option', { value: 'replace' }, d.backup.replace),
+  );
+  const run = async () => {
+    const f = file.files?.[0];
+    if (!f) return;
+    let data: unknown;
+    try {
+      data = JSON.parse(await f.text());
+    } catch {
+      toast(d.backup.badFile, 'error');
+      return;
+    }
+    if (mode.value === 'replace' && !confirm(d.backup.confirmReplace)) return;
+    const r = await attempt(() => api.importBar(data, mode.value as 'merge' | 'replace'));
+    if (r) {
+      toast(d.backup.imported);
+      file.value = '';
+    }
+  };
+  return h(
+    'section',
+    { class: 'paper' },
+    h('h2', null, d.backup.title),
+    h('p', { class: 'muted' }, d.backup.hint),
+    h(
+      'div',
+      { class: 'actions' },
+      h('a', { class: 'btn', href: '/api/export', download: '' }, d.backup.export),
+    ),
+    h(
+      'div',
+      { class: 'actions' },
+      file,
+      mode,
+      h('button', { class: 'btn btn-primary', type: 'button', onclick: run }, d.backup.import),
     ),
   );
 }

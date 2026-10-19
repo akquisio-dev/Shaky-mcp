@@ -123,6 +123,27 @@ export const en = {
       custom: 'Step',
     } as Record<string, string>,
   },
+  form: {
+    newRecipe: 'New recipe',
+    save: 'Save recipe',
+    saved: (n: string) => `${n} saved.`,
+    ingName: 'Ingredient',
+    matches: 'Matches bottles with (e.g. white rum)',
+    matchesShort: 'Matches',
+    matchHint:
+      'Shaky finds a bottle when all words of "matches" appear in its name, kind or tags. Keep it generic, like "rum" or "lime juice".',
+    amount: 'Amount',
+    seconds: 'Seconds',
+    addIng: 'Ingredient',
+    addStep: 'Step',
+    draft: 'Draft steps from ingredients',
+    up: 'Move up',
+    down: 'Move down',
+    glass: 'Glass',
+    description: 'Description',
+    method: 'Method',
+    color: 'Drink color',
+  },
   shopping: {
     add: 'Add',
     added: (what: string) => `On the shopping list: ${what}`,
@@ -148,10 +169,24 @@ export const en = {
   },
   activity: {
     empty: 'No changes yet.',
+    mixes: 'Recently mixed',
     who: { web: 'You', mcp: 'Shaky', cli: 'Command line', system: 'System' } as Record<
       string,
       string
     >,
+  },
+  backup: {
+    title: 'Backup',
+    hint: 'Saves bottles, equipment, glasses, recipes and the shopping list as one JSON file. History is not included.',
+    export: 'Download backup',
+    import: 'Import',
+    file: 'Backup file',
+    mode: 'Import mode',
+    merge: 'Add to my bar (keep existing names)',
+    replace: 'Replace my bar',
+    confirmReplace: 'This deletes everything in your bar before importing. Continue?',
+    imported: 'Backup imported.',
+    badFile: 'That file is not valid JSON.',
   },
   common: {
     edit: 'Edit',
@@ -160,7 +195,14 @@ export const en = {
     save: 'Save',
     error: 'That did not work',
   },
-  settings: { language: 'Language', theme: 'Theme', light: 'Light', dark: 'Dark', auto: 'Auto' },
+  settings: {
+    units: 'Units',
+    language: 'Language',
+    theme: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    auto: 'Auto',
+  },
   footer: 'Local only, no login. For adults of legal drinking age. Drink responsibly.',
   live: { offline: 'Live updates paused, reconnecting' },
 };

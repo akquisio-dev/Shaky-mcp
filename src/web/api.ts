@@ -27,6 +27,7 @@ import {
   updateIngredientFields,
 } from '../core/inventory.js';
 import { logMix } from '../core/mixing.js';
+import { exportBar, importBar } from '../core/backup.js';
 import { barOverview } from '../core/overview.js';
 import {
   deleteRecipe,
@@ -230,6 +231,21 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
   api.delete('/shopping/:id', (c) =>
     c.json(done(updateShoppingItem(ctx, id(c), { remove: true }))),
   );
+
+  // backup
+  api.get('/export', (c) => {
+    c.header(
+      'Content-Disposition',
+      `attachment; filename="shaky-bar-${ctx.now().toISOString().slice(0, 10)}.json"`,
+    );
+    return c.json(exportBar(ctx));
+  });
+  api.post('/import', async (c) => {
+    const b = z
+      .object({ data: z.unknown(), mode: z.enum(['merge', 'replace']).default('merge') })
+      .parse(await body(c));
+    return c.json(done(importBar(ctx, b.data, b.mode)));
+  });
 
   // activity & settings
   api.get('/activity', (c) =>

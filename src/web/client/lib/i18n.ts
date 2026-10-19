@@ -43,6 +43,20 @@ function sentence(a: Activity, who: string): string {
   if (a.entity === 'ingredient' && changes.opened_at?.to) {
     return de ? `${who} hat ${name} geöffnet` : `${who} opened ${name}`;
   }
+  if (a.entity === 'bar') {
+    const n = a.data as Record<string, number>;
+    const what = de
+      ? `${n.ingredients ?? 0} Zutaten, ${n.recipes ?? 0} Rezepte, ${n.equipment ?? 0} Werkzeuge, ${n.glassware ?? 0} Gläser`
+      : `${n.ingredients ?? 0} ingredients, ${n.recipes ?? 0} recipes, ${n.equipment ?? 0} tools, ${n.glassware ?? 0} glasses`;
+    if (a.action === 'reset')
+      return de ? `${who} hat die Bar ersetzt: ${what}` : `${who} replaced the bar: ${what}`;
+    return de ? `${who} hat Daten geladen: ${what}` : `${who} loaded data: ${what}`;
+  }
+  if (a.entity === 'settings') {
+    return de
+      ? `${who} hat die Einstellung ${String(a.data.key)} geändert`
+      : `${who} changed the ${String(a.data.key)} setting`;
+  }
   const verbs: Record<string, [string, string]> = {
     created: ['added', 'hinzugefügt'],
     updated: ['changed', 'geändert'],

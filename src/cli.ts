@@ -9,6 +9,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { loadConfig, type Config } from './config.js';
 import { createCtx } from './core/context.js';
 import { readSeedFile, seed } from './core/seed.js';
+import { exportBar, importBar } from './core/backup.js';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { openDb } from './db/connection.js';
 import { getSetting } from './db/repos/misc.js';
 import { createMcpServer } from './mcp/server.js';
@@ -24,6 +26,8 @@ Commands:
   mcp       MCP over stdio (what Claude Desktop runs). Also starts the web UI
             when the port is free, unless --no-web or SHAKY_WEB_AUTOSTART=false
   seed      Load the example bar from examples/seed.json (--reset wipes first)
+  export    Write the whole bar as JSON to a file (or stdout without a path)
+  import    Load a JSON export: merge by name, or --replace to wipe first
   doctor    Check the setup and print a Claude Desktop config snippet
 
 Options:
@@ -32,6 +36,7 @@ Options:
   --data-dir <path>   Where shaky.db lives (env SHAKY_DATA_DIR)
   --no-web            mcp: never start the web UI
   --reset             seed: delete all bar data before loading
+  --replace           import: delete all bar data before loading
   --file <path>       seed: load another seed file
   -h, --help          Show this help
   -v, --version       Show the version
@@ -50,6 +55,7 @@ function parse(argv: string[]) {
       'data-dir': { type: 'string' },
       'no-web': { type: 'boolean' },
       reset: { type: 'boolean' },
+      replace: { type: 'boolean' },
       file: { type: 'string' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -156,6 +162,31 @@ function cmdSeed(cfg: Config, values: ReturnType<typeof parse>['values']) {
   );
 }
 
+function cmdExport(cfg: Config, file: string | undefined) {
+  const db = openDb(cfg.dbFile);
+  const json = JSON.stringify(exportBar(createCtx(db, 'cli')), null, 2);
+  db.close();
+  if (!file) return void process.stdout.write(`${json}\n`);
+  writeFileSync(file, `${json}\n`);
+  console.log(`Exported to ${file}`);
+}
+
+function cmdImport(cfg: Config, file: string | undefined, replace: boolean) {
+  if (!file) throw new Error('Usage: shaky import <file.json> [--replace]');
+  const db = openDb(cfg.dbFile);
+  const { result } = importBar(
+    createCtx(db, 'cli'),
+    JSON.parse(readFileSync(file, 'utf8')),
+    replace ? 'replace' : 'merge',
+  );
+  db.close();
+  console.log(
+    `${replace ? 'Replaced the bar with' : 'Merged'} ${file}: ${Object.entries(result)
+      .map(([k, v]) => `${v} ${k.replace('_', ' ')}`)
+      .join(', ')}${replace ? '' : ' (items with existing names were kept)'}.`,
+  );
+}
+
 function portFree(host: string, port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const s = createServer();
@@ -239,6 +270,10 @@ async function main() {
       return cmdMcp(cfg);
     case 'seed':
       return cmdSeed(cfg, values);
+    case 'export':
+      return cmdExport(cfg, positionals[1]);
+    case 'import':
+      return cmdImport(cfg, positionals[1], Boolean(values.replace));
     case 'doctor':
       return cmdDoctor(cfg);
     default:

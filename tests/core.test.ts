@@ -328,3 +328,36 @@ describe('garnish matching', () => {
     expect(slice?.status).toBe('missing');
   });
 });
+
+describe('backup', () => {
+  it('round-trips the bar through export and import', async () => {
+    const { exportBar, importBar } = await import('../src/core/backup.js');
+    const src = seededCtx();
+    addIngredient(src, { name: 'Falernum', category: 'liqueur', location: 'bar_cart' });
+    archiveIngredient(src, 'Bourbon');
+    const doc = JSON.parse(JSON.stringify(exportBar(src)));
+
+    const dst = ctxFor(freshDb());
+    const { result } = importBar(dst, doc, 'replace');
+    expect(result.ingredients).toBe(14);
+    expect(result.recipes).toBe(12);
+    const lillet = getIngredientView(dst, 'Lillet Blanc');
+    expect(lillet.opened_at).toBe(getIngredientView(src, 'Lillet Blanc').opened_at);
+    expect(
+      listIngredientViews(dst, { include_archived: true }).find((i) => i.name === 'Bourbon')
+        ?.archived,
+    ).toBe(true);
+    expect(listIngredientViews(dst, { location: 'bar_cart' }).map((i) => i.name)).toEqual([
+      'Falernum',
+    ]);
+    expect(findMakeable(dst).makeable.length).toBe(findMakeable(src).makeable.length);
+  });
+
+  it('merges without duplicating and rejects invalid files', async () => {
+    const { exportBar, importBar } = await import('../src/core/backup.js');
+    const ctx = seededCtx();
+    const { result } = importBar(ctx, exportBar(ctx), 'merge');
+    expect(result.ingredients).toBe(0);
+    expect(() => importBar(ctx, { recipes: [{ name: 'x' }] })).toThrow();
+  });
+});
