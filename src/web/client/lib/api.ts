@@ -7,11 +7,13 @@ import type { RecipeWithCheck, MakeableResult } from '../../../core/recipes.js';
 import type { BarOverview } from '../../../core/overview.js';
 import type { Training } from '../../../core/training.js';
 import type { TrashItem, UndoGroup } from '../../../core/undo.js';
+import type { Substitution } from '../../../core/matching.js';
 import type { Preference } from '../../../core/preferences.js';
 import type { Template } from '../../../core/prep.js';
 import type { batchCalculator } from '../../../core/batch.js';
 
 export type {
+  Substitution,
   Training,
   TrashItem,
   UndoGroup,
@@ -122,5 +124,10 @@ export const api = {
     req<Mut<{ label: string | null }>>('POST', '/undo', b),
   trash: () => req<TrashItem[]>('GET', '/trash'),
   restore: (id: number) => req<Mut<{ name: string }>>('POST', `/trash/${id}/restore`, {}),
+  importCsv: (what: 'ingredients' | 'recipes', csv: string, dry_run: boolean) =>
+    req<Mut<unknown> & { dry_run?: boolean }>('POST', '/import-csv', { what, csv, dry_run }),
+  substitutions: () => req<Substitution[]>('GET', '/substitutions'),
+  addSubstitution: (b: object) => req<Mut<Substitution>>('POST', '/substitutions', b),
+  removeSubstitution: (id: number) => req<Mut<Substitution>>('DELETE', `/substitutions/${id}`),
   settings: (b: object) => req<Record<string, unknown>>('PATCH', '/settings', b),
 };

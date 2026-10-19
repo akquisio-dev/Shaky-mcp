@@ -13,7 +13,9 @@ import { mutate, nowIso, ShakyError, type Ctx } from './context.js';
 import { listIngredientViews } from './inventory.js';
 import { checkRecipe, type Household, type RecipeCheck } from './matching.js';
 import { listPreferences, personalize, type Personalized } from './preferences.js';
+import { listSubstitutions } from './substitutions.js';
 import { drinkStrength, type Strength } from './strength.js';
+import { drinkCost, type Cost } from './cost.js';
 import { getSetting } from '../db/repos/misc.js';
 import { recipeInputSchema, type RecipeInput } from './schemas.js';
 
@@ -36,6 +38,7 @@ export function resolveRecipe(ctx: Ctx, ref: number | string): Recipe {
 }
 
 export interface RecipeFilter {
+  alcohol_free?: boolean;
   tag?: string;
   search?: string;
   favorite?: boolean;
@@ -48,6 +51,9 @@ export interface RecipeWithCheck extends Recipe {
   /** How this user makes it: amounts after preferences, and what they avoid. */
   personal: Personalized;
   strength: Strength;
+  cost: Cost;
+  /** No alcohol at all (a mocktail). */
+  alcohol_free: boolean;
 }
 
 function checker(ctx: Ctx) {
@@ -57,7 +63,9 @@ function checker(ctx: Ctx) {
   const equipment = listEquipment(ctx.db);
   const household = getSetting<Household>(ctx.db, 'household_substitutes', {});
   const prefs = listPreferences(ctx);
+  const subs = listSubstitutions(ctx);
   const drinkG = getSetting<number>(ctx.db, 'standard_drink_g', 10);
+  const currency = getSetting<string>(ctx.db, 'currency', 'EUR');
   return (r: Recipe): Omit<RecipeWithCheck, keyof Recipe> => {
     const personal = personalize(r, prefs);
     const availability = checkRecipe(
@@ -65,6 +73,7 @@ function checker(ctx: Ctx) {
       stock,
       equipment,
       household,
+      subs,
     );
     const strength = drinkStrength(
       personal.ingredients,
@@ -74,7 +83,8 @@ function checker(ctx: Ctx) {
       categories,
       drinkG,
     );
-    return { availability, personal, strength };
+    const cost = drinkCost(personal.ingredients, availability.lines, byId, currency);
+    return { availability, personal, strength, cost, alcohol_free: strength.alcohol_g === 0 };
   };
 }
 
@@ -85,6 +95,7 @@ export function listRecipesWithCheck(ctx: Ctx, f: RecipeFilter = {}): RecipeWith
     .map((r) => ({ ...r, ...check(r) }))
     .filter((r) => {
       if (f.tag && !r.tags.includes(f.tag.toLowerCase())) return false;
+      if (f.alcohol_free !== undefined && r.alcohol_free !== f.alcohol_free) return false;
       if (f.favorite !== undefined && r.favorite !== f.favorite) return false;
       if (f.status && r.availability.status !== f.status) return false;
       if (q) {
@@ -105,6 +116,8 @@ export function getRecipeWithCheck(ctx: Ctx, ref: number | string): RecipeWithCh
 
 export interface MakeableResult {
   makeable: RecipeCheck[];
+  /** Makeable when stand-ins are used ("ginger ale instead of ginger beer"). */
+  with_substitute: RecipeCheck[];
   /** Makeable but with something the user avoids; left out of the lists above. */
   avoided: { name: string; because: string[] }[];
   missing_one: RecipeCheck[];
@@ -115,19 +128,32 @@ export interface MakeableResult {
 
 export function findMakeable(
   ctx: Ctx,
-  opts: { tag?: string; include_missing_more?: boolean; include_avoided?: boolean } = {},
+  opts: {
+    tag?: string;
+    include_missing_more?: boolean;
+    include_avoided?: boolean;
+    alcohol_free?: boolean;
+    /** Put recipes that use up soon-expiring bottles first. */
+    use_up?: boolean;
+  } = {},
 ): MakeableResult {
-  const recipes = listRecipesWithCheck(ctx, { tag: opts.tag });
+  const recipes = listRecipesWithCheck(ctx, {
+    tag: opts.tag,
+    alcohol_free: opts.alcohol_free || undefined,
+  });
   const avoidedIds = new Set(recipes.filter((r) => r.personal.avoided.length).map((r) => r.id));
+  const soonest = (c: RecipeCheck) => c.uses_expiring[0]?.days_left ?? Infinity;
   const all = recipes
     .filter((r) => opts.include_avoided || !avoidedIds.has(r.id))
-    .map((r) => r.availability);
+    .map((r) => r.availability)
+    .sort((a, b) => (opts.use_up ? soonest(a) - soonest(b) : 0));
   const more = all.filter((c) => c.status === 'missing_more');
   return {
     avoided: recipes
       .filter((r) => avoidedIds.has(r.id) && !opts.include_avoided)
       .map((r) => ({ name: r.name, because: r.personal.avoided })),
     makeable: all.filter((c) => c.status === 'makeable'),
+    with_substitute: all.filter((c) => c.status === 'with_substitute'),
     missing_one: all.filter((c) => c.status === 'missing_one'),
     missing_more_count: more.length,
     ...(opts.include_missing_more && { missing_more: more }),

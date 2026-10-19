@@ -19,6 +19,8 @@ export interface Ingredient {
   provides: string[];
   variants: Variant[];
   best_before: string | null;
+  price: number | null;
+  freeze_hours: number | null;
   origin: string | null;
   abv: number | null;
   color: string | null;

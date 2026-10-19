@@ -18,6 +18,12 @@ import { ShakyError, type Change, type Ctx } from '../core/context.js';
 import { countExampleData, removeExampleData } from '../core/examples.js';
 import { listTrash, listUndoable, restoreFromTrash, undo } from '../core/undo.js';
 import {
+  addSubstitution,
+  listSubstitutions,
+  removeSubstitution,
+  substitutionInputSchema,
+} from '../core/substitutions.js';
+import {
   addPreference,
   describePreference,
   listPreferences,
@@ -503,7 +509,8 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
         tag: z.string().optional(),
         search: z.string().optional(),
         favorite: z.boolean().optional(),
-        status: z.enum(['makeable', 'missing_one', 'missing_more']).optional(),
+        status: z.enum(['makeable', 'with_substitute', 'missing_one', 'missing_more']).optional(),
+        alcohol_free: z.boolean().optional(),
       },
       readOnly: true,
     },
@@ -518,6 +525,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
         status: r.availability.status,
         ...(r.availability.missing.length && { missing: r.availability.missing }),
         abv: r.strength.abv,
+        ...(r.cost.amount > 0 && { cost: r.cost.amount }),
         ...(r.personal.avoided.length && { avoided: r.personal.avoided }),
       }));
       return ok(`${items.length} recipe(s).`, { items });
@@ -529,7 +537,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     {
       title: 'Get recipe',
       description:
-        "Full recipe with ingredients (each marked available, unavailable or missing, with the matching bottle), structured steps, missing equipment, strength (abv, standard drinks, energy drink warning) and personal: the amounts after the user's preferences. Use personal amounts when telling the user how to mix.",
+        "Full recipe with ingredients (each marked available, unavailable or missing, with the matching bottle), structured steps, missing equipment, strength (abv, standard drinks, energy drink warning), cost per drink (from bottle prices; complete false when a price is missing) and personal: the amounts after the user's preferences. Use personal amounts when telling the user how to mix.",
       input: { recipe: recipeRef },
       readOnly: true,
     },
@@ -604,10 +612,15 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     {
       title: 'What can I make?',
       description:
-        'Saved recipes that can be made right now with what is in stock (with servings_possible: how many times the stock allows, each recipe counted on its own), plus those missing exactly one required ingredient (great for shopping suggestions). Matching is fuzzy over category, subcategory and tags; empty and expired items do not count. Equipment gaps are reported but do not block. For drinks not saved yet, use get_bar_overview and your own knowledge.',
+        'Saved recipes that can be made right now with what is in stock (with servings_possible: how many times the stock allows, each recipe counted on its own), those makeable with a stand-in (with_substitute: e.g. ginger ale for ginger beer, with a note how it changes the drink), plus those missing exactly one required ingredient (great for shopping suggestions). use_up: true puts drinks first that use bottles expiring soon (uses_expiring). alcohol_free: true for mocktails only. Matching is fuzzy over category, subcategory and tags; empty and expired items do not count. Equipment gaps are reported but do not block. For drinks not saved yet, use get_bar_overview and your own knowledge.',
       input: {
         tag: z.string().optional().describe('Only recipes with this tag, e.g. tiki, longdrink.'),
         include_missing_more: z.boolean().optional(),
+        use_up: z
+          .boolean()
+          .optional()
+          .describe('Sort drinks that use soon-expiring bottles first.'),
+        alcohol_free: z.boolean().optional().describe('Only drinks without alcohol.'),
         include_avoided: z
           .boolean()
           .optional()
@@ -624,15 +637,22 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
         ...(c.missing_optional.length && { missing_optional: c.missing_optional }),
         ...(c.missing_equipment.length && { missing_equipment: c.missing_equipment }),
         ...(c.substitutes_used.length && { substitutes_used: c.substitutes_used }),
-        ...(c.status === 'makeable' &&
+        ...(c.substitutions.length && { substitutions: c.substitutions }),
+        ...(c.uses_expiring.length && { uses_expiring: c.uses_expiring }),
+        ...((c.status === 'makeable' || c.status === 'with_substitute') &&
           c.servings_possible !== null && { servings_possible: c.servings_possible }),
       });
       return ok(
         `Makeable: ${r.makeable.map((c) => (c.servings_possible !== null ? `${c.name} (${c.servings_possible}x)` : c.name)).join(', ') || 'none'}. Missing one: ${
           r.missing_one.map((c) => `${c.name} (${c.missing[0]})`).join(', ') || 'none'
-        }.`,
+        }.${
+          r.with_substitute.length
+            ? ` With a stand-in: ${r.with_substitute.map((c) => `${c.name} (${c.substitutions.map((s) => `${s.using} for ${s.line}${s.note ? `, ${s.note}` : ''}`).join('; ')})`).join(', ')}.`
+            : ''
+        }`,
         {
           makeable: r.makeable.map(slim),
+          with_substitute: r.with_substitute.map(slim),
           missing_one: r.missing_one.map(slim),
           missing_more_count: r.missing_more_count,
           ...(r.avoided.length && { left_out_because_avoided: r.avoided }),
@@ -771,6 +791,60 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     (a) => {
       const { result, changes } = removePreference(ctx, a.id);
       return changed(`Forgot: ${describePreference(result)}.`, changes, { removed: result });
+    },
+  );
+
+  reg(
+    'list_substitutions',
+    {
+      title: 'Substitution rules',
+      description:
+        'Stand-ins Shaky accepts when an ingredient is missing, e.g. ginger ale for ginger beer (milder), lemon for lime juice. Recipes covered this way count as with_substitute.',
+      input: {},
+      readOnly: true,
+    },
+    () => {
+      const items = listSubstitutions(ctx);
+      return ok(
+        items
+          .map(
+            (x) =>
+              `${x.id}: ${x.use_words} for ${x.for_words}${x.two_way ? ' (both ways)' : ''}${x.note ? `, ${x.note}` : ''}`,
+          )
+          .join('; '),
+        { items },
+      );
+    },
+  );
+
+  reg(
+    'add_substitution',
+    {
+      title: 'Add a substitution rule',
+      description:
+        'Teach Shaky a stand-in: use_words may replace for_words (with an amount ratio and a note how it changes the drink). two_way for symmetric pairs like lime and lemon juice.',
+      input: substitutionInputSchema.shape,
+    },
+    (a) => {
+      const { result, changes } = addSubstitution(ctx, a);
+      return changed(`Saved: ${result.use_words} for ${result.for_words}.`, changes, {
+        substitution: result,
+      });
+    },
+  );
+
+  reg(
+    'remove_substitution',
+    {
+      title: 'Remove a substitution rule',
+      description: 'Remove a substitution rule by its id from list_substitutions.',
+      input: { id: z.number().int().positive() },
+    },
+    (a) => {
+      const { result, changes } = removeSubstitution(ctx, a.id);
+      return changed(`Removed: ${result.use_words} for ${result.for_words}.`, changes, {
+        removed: result,
+      });
     },
   );
 

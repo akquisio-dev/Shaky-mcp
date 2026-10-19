@@ -13,6 +13,8 @@ export const JOURNALED = [
   'category_defaults',
   'preferences',
   'prep_templates',
+  'substitutions',
+  'diet_rules',
 ] as const;
 
 const exists = (db: Db, name: string) =>

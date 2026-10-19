@@ -82,6 +82,18 @@ export function barOverview(ctx: Ctx) {
       servings_possible: c.servings_possible,
     })),
     missing_one: makeable.missing_one.map((c) => ({ name: c.name, missing: c.missing[0] })),
+    with_substitute: makeable.with_substitute.map((c) => ({
+      name: c.name,
+      substitutions: c.substitutions,
+    })),
+    use_up_first: [...makeable.makeable, ...makeable.with_substitute]
+      .filter((c) => c.uses_expiring.length)
+      .sort((x, y) => x.uses_expiring[0]!.days_left - y.uses_expiring[0]!.days_left)
+      .slice(0, 5)
+      .map((c) => ({
+        name: c.name,
+        uses: c.uses_expiring.map((u) => `${u.bottle} (${u.days_left} d)`),
+      })),
   };
 }
 
@@ -107,6 +119,16 @@ export function overviewText(o: BarOverview): string {
   lines.push(
     `Saved recipes makeable now: ${o.makeable_now.map((m) => (m.servings_possible !== null ? `${m.name} (${m.servings_possible}x)` : m.name)).join(', ') || 'none'}`,
   );
+  if (o.use_up_first.length) {
+    lines.push(
+      `Use up first: ${o.use_up_first.map((u) => `${u.name} (${u.uses.join(', ')})`).join('; ')}`,
+    );
+  }
+  if (o.with_substitute.length) {
+    lines.push(
+      `Makeable with a stand-in: ${o.with_substitute.map((w) => `${w.name} (${w.substitutions.map((s) => `${s.using} for ${s.line}`).join(', ')})`).join('; ')}`,
+    );
+  }
   if (o.missing_one.length) {
     lines.push(
       `Missing one ingredient: ${o.missing_one.map((m) => `${m.name} (needs ${m.missing})`).join(', ')}`,

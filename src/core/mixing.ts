@@ -7,6 +7,7 @@ import { listIngredientViews, resolveIngredient, writeStock } from './inventory.
 import { checkLine } from './matching.js';
 import { resolveRecipe } from './recipes.js';
 import { listPreferences, personalize } from './preferences.js';
+import { listSubstitutions } from './substitutions.js';
 import type { Unit } from './schemas.js';
 
 export interface MixInput {
@@ -57,10 +58,11 @@ export function logMix(ctx: Ctx, input: MixInput) {
         }
       } else if (recipe) {
         const stock = listIngredientViews(ctx, { include_empty: true });
+        const subs = listSubstitutions(ctx);
         // Deduct what this user actually pours (personal adjustments applied).
         const mine = personalize(recipe, listPreferences(ctx)).ingredients;
         for (const spec of mine) {
-          const line = checkLine(spec, stock);
+          const line = checkLine(spec, stock, subs);
           if (!line.match) {
             if (!spec.optional && !spec.garnish)
               skipped.push({ name: spec.name, reason: 'not in stock' });
@@ -72,7 +74,8 @@ export function logMix(ctx: Ctx, input: MixInput) {
           }
           plan.push({
             ing: getIngredient(ctx.db, line.match.id)!,
-            amount: spec.amount * servings,
+            // A stand-in may need a different amount (rich syrup: two thirds).
+            amount: spec.amount * servings * (line.substitute?.ratio ?? 1),
             unit: spec.unit,
             garnish: spec.garnish,
           });

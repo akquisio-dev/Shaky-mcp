@@ -382,6 +382,10 @@ export function openIngredientForm(i?: IngredientView): void {
       }),
     ),
     field(
+      d.ing.price,
+      h('input', { name: 'price', type: 'number', min: 0, step: '0.01', value: i?.price ?? '' }),
+    ),
+    field(
       d.ing.abv,
       h('input', {
         name: 'abv',
@@ -488,6 +492,7 @@ export function openIngredientForm(i?: IngredientView): void {
       quantity: num(f.get('quantity')) ?? 1,
       bottle_size_ml: num(f.get('bottle_size_ml')),
       abv: num(f.get('abv')),
+      price: num(f.get('price')),
       yield_ml: num(f.get('yield_ml')),
       opened_at: str(f.get('opened_at')),
       shelf_life_days: num(f.get('shelf_life_days')),

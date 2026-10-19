@@ -28,6 +28,13 @@ import {
 } from '../core/inventory.js';
 import { logMix } from '../core/mixing.js';
 import { exportBar, importBar } from '../core/backup.js';
+import { addSubstitution, listSubstitutions, removeSubstitution } from '../core/substitutions.js';
+import {
+  exportIngredientsCsv,
+  exportRecipesCsv,
+  importIngredientsCsv,
+  importRecipesCsv,
+} from '../core/csv.js';
 import { listTrash, listUndoable, restoreFromTrash, undo } from '../core/undo.js';
 import { addPreference, listPreferences, removePreference } from '../core/preferences.js';
 import { listTemplates, makePreparation, saveTemplate } from '../core/prep.js';
@@ -263,6 +270,40 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
     c.json(done(makePreparation(ctx, (await body(c)) as never)), 201),
   );
   api.post('/batch', async (c) => c.json(batchCalculator(ctx, (await body(c)) as never)));
+
+  // substitution rules
+  api.get('/substitutions', (c) => c.json(listSubstitutions(ctx)));
+  api.post('/substitutions', async (c) =>
+    c.json(done(addSubstitution(ctx, (await body(c)) as never)), 201),
+  );
+  api.delete('/substitutions/:id', (c) => c.json(done(removeSubstitution(ctx, id(c)))));
+
+  // CSV for spreadsheets
+  api.get('/export.csv', (c) => {
+    const what = c.req.query('what') === 'recipes' ? 'recipes' : 'ingredients';
+    c.header('Content-Type', 'text/csv; charset=utf-8');
+    c.header(
+      'Content-Disposition',
+      `attachment; filename="shaky-${what}-${ctx.now().toISOString().slice(0, 10)}.csv"`,
+    );
+    // A BOM so Excel opens umlauts correctly.
+    return c.body(
+      `\uFEFF${what === 'recipes' ? exportRecipesCsv(ctx) : exportIngredientsCsv(ctx)}`,
+    );
+  });
+  api.post('/import-csv', async (c) => {
+    const b = z
+      .object({
+        what: z.enum(['ingredients', 'recipes']),
+        csv: z.string().max(5_000_000),
+        dry_run: z.boolean().optional(),
+      })
+      .parse(await body(c));
+    const target = b.dry_run ? { ...ctx, dryRun: true } : ctx;
+    const run = (): { result: unknown; changes: unknown[] } =>
+      b.what === 'recipes' ? importRecipesCsv(target, b.csv) : importIngredientsCsv(target, b.csv);
+    return c.json(b.dry_run ? run() : done(run()));
+  });
 
   // safety net
   api.get('/undo', (c) => c.json(listUndoable(ctx, Number(c.req.query('limit') ?? 20))));

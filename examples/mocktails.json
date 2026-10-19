@@ -1,0 +1,142 @@
+{
+  "recipes": [
+    {
+      "name": "Elderflower Spritz",
+      "description": "Elderflower syrup, lime and soda over ice. Light and floral.",
+      "tags": ["mocktail", "alcohol free", "longdrink", "refreshing"],
+      "glass": "wine",
+      "method": "built",
+      "color": "#eef3d2",
+      "ingredients": [
+        {
+          "name": "Elderflower syrup",
+          "category": "syrup",
+          "subcategory": "elderflower",
+          "amount": 2
+        },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 1 },
+        { "name": "Soda water", "category": "mixer", "subcategory": "soda", "amount": 15 },
+        {
+          "name": "Mint sprig",
+          "subcategory": "mint",
+          "amount": 1,
+          "unit": "sprig",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Elderflower syrup", "amount": 2, "unit": "cl" },
+        { "action": "pour", "ingredient": "Lime juice", "amount": 1, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Soda water", "amount": 15, "unit": "cl" },
+        { "action": "garnish", "ingredient": "Mint sprig" }
+      ]
+    },
+    {
+      "name": "Virgin Mojito",
+      "description": "All the mint and lime, no rum.",
+      "tags": ["mocktail", "alcohol free", "longdrink", "refreshing"],
+      "glass": "highball",
+      "method": "muddled",
+      "color": "#d6efc0",
+      "ingredients": [
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 3 },
+        { "name": "Simple syrup", "category": "syrup", "subcategory": "sugar", "amount": 2 },
+        { "name": "Mint leaves", "subcategory": "mint", "amount": 8, "unit": "leaf" },
+        { "name": "Soda water", "category": "mixer", "subcategory": "soda", "amount": 12 }
+      ],
+      "steps": [
+        { "action": "pour", "ingredient": "Mint leaves", "amount": 8, "unit": "leaf" },
+        { "action": "pour", "ingredient": "Simple syrup", "amount": 2, "unit": "cl" },
+        { "action": "pour", "ingredient": "Lime juice", "amount": 3, "unit": "cl" },
+        { "action": "muddle", "duration_s": 5 },
+        { "action": "add_ice", "note": "Crushed ice." },
+        { "action": "top_up", "ingredient": "Soda water", "amount": 12, "unit": "cl" },
+        { "action": "stir", "equipment": "bar_spoon", "duration_s": 5 }
+      ]
+    },
+    {
+      "name": "Pineapple Ginger Cooler",
+      "description": "Pineapple juice lengthened with spicy ginger beer and lime.",
+      "tags": ["mocktail", "alcohol free", "fruity", "longdrink"],
+      "glass": "highball",
+      "method": "built",
+      "color": "#f7d873",
+      "ingredients": [
+        { "name": "Pineapple juice", "subcategory": "pineapple juice", "amount": 8 },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 1.5 },
+        { "name": "Ginger beer", "category": "mixer", "subcategory": "ginger beer", "amount": 10 }
+      ],
+      "steps": [
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Pineapple juice", "amount": 8, "unit": "cl" },
+        { "action": "pour", "ingredient": "Lime juice", "amount": 1.5, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Ginger beer", "amount": 10, "unit": "cl" }
+      ]
+    },
+    {
+      "name": "Shirley Temple",
+      "description": "Ginger ale with a splash of grenadine and a cherry.",
+      "tags": ["mocktail", "alcohol free", "classic", "sweet"],
+      "glass": "highball",
+      "method": "built",
+      "color": "#f59aa0",
+      "ingredients": [
+        { "name": "Ginger ale", "category": "mixer", "subcategory": "ginger ale", "amount": 15 },
+        { "name": "Grenadine", "category": "syrup", "subcategory": "grenadine", "amount": 1.5 },
+        { "name": "Cherry", "subcategory": "cherry", "amount": 1, "unit": "piece", "garnish": true }
+      ],
+      "steps": [
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Ginger ale", "amount": 15, "unit": "cl" },
+        {
+          "action": "pour",
+          "ingredient": "Grenadine",
+          "amount": 1.5,
+          "unit": "cl",
+          "note": "Let it sink."
+        },
+        { "action": "garnish", "ingredient": "Cherry" }
+      ]
+    },
+    {
+      "name": "Virgin Colada",
+      "description": "Pineapple and coconut blended creamy, without the rum.",
+      "tags": ["mocktail", "alcohol free", "beach", "creamy", "blended"],
+      "glass": "hurricane",
+      "method": "blended",
+      "color": "#fbeec1",
+      "ingredients": [
+        { "name": "Pineapple juice", "subcategory": "pineapple juice", "amount": 12 },
+        { "name": "Cream of coconut", "subcategory": "coconut cream", "amount": 4 },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 1, "optional": true }
+      ],
+      "steps": [
+        {
+          "action": "pour",
+          "ingredient": "Pineapple juice",
+          "amount": 12,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Cream of coconut",
+          "amount": 4,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lime juice",
+          "amount": 1,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        { "action": "add_ice" },
+        { "action": "blend", "duration_s": 20 },
+        { "action": "pour" }
+      ]
+    }
+  ]
+}

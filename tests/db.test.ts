@@ -9,7 +9,7 @@ describe('migrations', () => {
     const locs = db.prepare('SELECT key FROM locations ORDER BY sort').all() as { key: string }[];
     expect(locs.map((l) => l.key)).toEqual(['shelf', 'fridge', 'freezer', 'pantry']);
     const cats = db.prepare('SELECT COUNT(*) AS n FROM category_defaults').get() as { n: number };
-    expect(cats.n).toBe(11);
+    expect(cats.n).toBe(12);
   });
 
   it('is idempotent', () => {

@@ -196,6 +196,13 @@ export const actionLogSchema = z.array(actionSchema).max(500);
  * line claim is ignored. Virtual sandbox bottles only count in sandbox trainings.
  */
 function resolver(ctx: Ctx, recipe: Recipe, sandbox: boolean) {
+  const check = getRecipeWithCheck(ctx, recipe.id).availability;
+  const subLines = new Map<number, typeof recipe.ingredients>();
+  for (const l of check.lines) {
+    if (l.status !== 'substituted' || !l.match) continue;
+    const spec = recipe.ingredients.find((x) => x.name === l.name);
+    if (spec) subLines.set(l.match.id, [...(subLines.get(l.match.id) ?? []), spec]);
+  }
   const stock = new Map(
     listIngredientViews(ctx, { include_empty: true, include_archived: true }).map((i) => [i.id, i]),
   );
@@ -205,7 +212,9 @@ function resolver(ctx: Ctx, recipe: Recipe, sandbox: boolean) {
     }
     const ing = stock.get(s.ingredient_id);
     if (!ing) return undefined;
-    const hits = recipe.ingredients.filter((l) => matchesSpec(l, ing));
+    // Stand-ins count for the line they cover (ginger ale for ginger beer).
+    const viaSub = subLines.get(s.ingredient_id) ?? [];
+    const hits = [...recipe.ingredients.filter((l) => matchesSpec(l, ing)), ...viaSub];
     const preferred = hits.find((l) => (purpose === 'garnish' ? l.garnish : !l.garnish));
     return (preferred ?? hits[0])?.name;
   };

@@ -287,6 +287,77 @@ export function renderGear(): HTMLElement {
     ),
     renderHousehold(),
     renderPreferences(),
+    renderSubstitutions(),
+  );
+}
+
+/** "Ginger ale for ginger beer, milder." */
+function renderSubstitutions(): HTMLElement {
+  const d = t().subs;
+  const forW = h('input', { required: true, placeholder: d.forPh, 'aria-label': d.for });
+  const useW = h('input', { required: true, placeholder: d.usePh, 'aria-label': d.use });
+  const note = h('input', { placeholder: d.notePh, 'aria-label': d.note });
+  const both = h('input', { type: 'checkbox' });
+  const form = h(
+    'form',
+    { class: 'sub-form' },
+    useW,
+    h('span', { class: 'muted' }, d.insteadOf),
+    forW,
+    note,
+    h('label', { class: 'check small' }, both, d.twoWay),
+    h('button', { class: 'btn btn-primary', type: 'submit' }, t().shopping.add),
+  );
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ok = await attempt(() =>
+      api.addSubstitution({
+        for_words: forW.value,
+        use_words: useW.value,
+        ...(note.value.trim() && { note: note.value.trim() }),
+        two_way: both.checked,
+      }),
+    );
+    if (ok) form.reset();
+  });
+  return h(
+    'section',
+    { class: 'paper' },
+    h('h2', null, d.title),
+    h('p', { class: 'muted' }, d.hint),
+    h(
+      'ul',
+      { class: 'gear-list' },
+      state.substitutions.map((x) =>
+        h(
+          'li',
+          null,
+          h(
+            'span',
+            { class: 'gear-name' },
+            `${x.use_words} ${x.two_way ? '⇄' : '→'} ${x.for_words}`,
+            x.note || x.ratio !== 1
+              ? h(
+                  'small',
+                  null,
+                  [x.note, x.ratio !== 1 ? `×${x.ratio}` : null].filter(Boolean).join(', '),
+                )
+              : null,
+          ),
+          h(
+            'button',
+            {
+              class: 'icon-btn',
+              type: 'button',
+              'aria-label': t().gear.remove,
+              onclick: () => attempt(() => api.removeSubstitution(x.id)),
+            },
+            '×',
+          ),
+        ),
+      ),
+    ),
+    form,
   );
 }
 
@@ -635,7 +706,7 @@ function renderBackup(): HTMLElement {
   const d = t();
   const file = h('input', {
     type: 'file',
-    accept: 'application/json,.json',
+    accept: 'application/json,.json,text/csv,.csv',
     'aria-label': d.backup.file,
   });
   const mode = h(
@@ -647,6 +718,24 @@ function renderBackup(): HTMLElement {
   const run = async () => {
     const f = file.files?.[0];
     if (!f) return;
+    if (/\.csv$/i.test(f.name)) {
+      // CSV: show what would happen first, then import for real.
+      const csv = await f.text();
+      const what = /^\uFEFF?[^\n]*\brecipe\b/i.test(csv) ? 'recipes' : 'ingredients';
+      const preview = await attempt(() => api.importCsv(what, csv, true));
+      if (!preview) return;
+      const r = preview.result as { added?: string[]; updated?: string[]; saved?: string[] };
+      const text =
+        what === 'recipes'
+          ? d.backup.csvRecipesPreview(r.saved?.length ?? 0)
+          : d.backup.csvPreview(r.added?.length ?? 0, r.updated?.length ?? 0);
+      if (!confirm(text)) return;
+      if (await attempt(() => api.importCsv(what, csv, false))) {
+        toast(d.backup.imported);
+        file.value = '';
+      }
+      return;
+    }
     let data: unknown;
     try {
       data = JSON.parse(await f.text());
@@ -670,6 +759,16 @@ function renderBackup(): HTMLElement {
       'div',
       { class: 'actions' },
       h('a', { class: 'btn', href: '/api/export', download: '' }, d.backup.export),
+      h(
+        'a',
+        { class: 'btn', href: '/api/export.csv?what=ingredients', download: '' },
+        d.backup.csvIngredients,
+      ),
+      h(
+        'a',
+        { class: 'btn', href: '/api/export.csv?what=recipes', download: '' },
+        d.backup.csvRecipes,
+      ),
       examplesButton(),
     ),
     h(

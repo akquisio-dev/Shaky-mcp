@@ -76,6 +76,18 @@ export function renderBar(): HTMLElement {
     ...new Set(items.map((i) => i.location).filter((k) => !known.has(k))),
   ];
   const makeable = state.recipes.filter((r) => r.availability.status === 'makeable');
+  // Drinks that use up what goes off first.
+  const useUp = state.recipes
+    .filter(
+      (r) =>
+        (r.availability.status === 'makeable' || r.availability.status === 'with_substitute') &&
+        r.availability.uses_expiring.length > 0 &&
+        !r.personal.avoided.length,
+    )
+    .sort(
+      (a, b) =>
+        a.availability.uses_expiring[0]!.days_left - b.availability.uses_expiring[0]!.days_left,
+    );
   const warnings = items.filter((i) => i.expired || i.expiring_soon || i.low);
 
   const head = h(
@@ -105,6 +117,28 @@ export function renderBar(): HTMLElement {
             'a',
             { href: '#/recipes?status=makeable', class: 'sticker sticker-lagoon' },
             d.bar.makeable(makeable.length),
+          )
+        : null,
+      useUp.length
+        ? h(
+            'div',
+            { class: 'warn-row use-up-row' },
+            h('strong', null, `${d.bar.useUpFirst}:`),
+            useUp
+              .slice(0, 4)
+              .map((r) =>
+                h(
+                  'a',
+                  { class: 'chip', href: `#/recipes?status=use_up` },
+                  r.name,
+                  ' ',
+                  h(
+                    'span',
+                    { class: 'badge b-soon' },
+                    t().badge.useIn(r.availability.uses_expiring[0]!.days_left),
+                  ),
+                ),
+              ),
           )
         : null,
       warnings.length

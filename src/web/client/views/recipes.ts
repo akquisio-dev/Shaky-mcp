@@ -8,17 +8,34 @@ import { formatAmount } from '../lib/units.js';
 import { openRecipeForm } from './recipeForm.js';
 import { openBatch } from './batch.js';
 
-type Filter = 'all' | 'makeable' | 'missing_one' | 'missing_more' | 'favorites';
+type Filter =
+  | 'all'
+  | 'makeable'
+  | 'with_substitute'
+  | 'missing_one'
+  | 'missing_more'
+  | 'favorites'
+  | 'alcohol_free'
+  | 'use_up';
 let filter: Filter = 'all';
 let search = '';
 let tag = '';
 
 export function setRecipeFilterFromHash(params: URLSearchParams): void {
   const s = params.get('status');
-  if (s === 'makeable' || s === 'missing_one' || s === 'missing_more') filter = s;
+  if (
+    s === 'makeable' ||
+    s === 'with_substitute' ||
+    s === 'missing_one' ||
+    s === 'missing_more' ||
+    s === 'use_up'
+  )
+    filter = s;
 }
 
 const amount = formatAmount;
+
+const usableStatus = (st: string) => st === 'makeable' || st === 'with_substitute';
 
 function card(r: RecipeWithCheck, rerender: () => void): HTMLElement {
   const d = t();
@@ -49,7 +66,7 @@ function card(r: RecipeWithCheck, rerender: () => void): HTMLElement {
         'span',
         { class: `sticker sticker-${st}` },
         label(d.recipe.status, st),
-        st === 'makeable' && r.availability.servings_possible !== null
+        usableStatus(st) && r.availability.servings_possible !== null
           ? ` ${r.availability.servings_possible}×`
           : '',
       ),
@@ -57,37 +74,60 @@ function card(r: RecipeWithCheck, rerender: () => void): HTMLElement {
         ? h('span', { class: 'missing' }, r.availability.missing.join(', '))
         : null,
       r.personal.avoided.length ? h('span', { class: 'badge b-low' }, d.recipe.avoided) : null,
-      r.strength.abv > 0 ? h('span', { class: 'muted abv' }, `${fmtNum(r.strength.abv)} %`) : null,
+      r.alcohol_free
+        ? h('span', { class: 'badge b-open' }, d.recipe.noAlcohol)
+        : r.strength.abv > 0
+          ? h('span', { class: 'muted abv' }, `${fmtNum(r.strength.abv)} %`)
+          : null,
+      r.availability.uses_expiring.length && usableStatus(st)
+        ? h('span', { class: 'badge b-soon' }, d.recipe.useUpBadge)
+        : null,
     ),
   );
 }
+
+const money = (x: number, cur: string) =>
+  new Intl.NumberFormat(t().lang, { style: 'currency', currency: cur }).format(x);
 
 const fmtNum = (x: number) => String(x).replace('.', t().lang === 'de' ? ',' : '.');
 
 export function renderRecipes(rerender: () => void): HTMLElement {
   const d = t();
   const q = search.toLowerCase();
-  const list = state.recipes.filter((r) => {
-    if (filter === 'favorites' ? !r.favorite : filter !== 'all' && r.availability.status !== filter)
-      return false;
-    if (tag && !r.tags.includes(tag)) return false;
-    if (
-      q &&
-      ![r.name, r.description ?? '', ...r.tags, ...r.ingredients.map((x) => x.name)]
-        .join(' ')
-        .toLowerCase()
-        .includes(q)
-    )
-      return false;
-    return true;
-  });
-  const tags = [...new Set(state.recipes.flatMap((r) => r.tags))].sort();
-  const count = (f: Filter) =>
+  const usable = (r: (typeof state.recipes)[number]) =>
+    r.availability.status === 'makeable' || r.availability.status === 'with_substitute';
+  const matches = (r: (typeof state.recipes)[number], f: Filter) =>
     f === 'all'
-      ? state.recipes.length
+      ? true
       : f === 'favorites'
-        ? state.recipes.filter((r) => r.favorite).length
-        : state.recipes.filter((r) => r.availability.status === f).length;
+        ? r.favorite
+        : f === 'alcohol_free'
+          ? r.alcohol_free
+          : f === 'use_up'
+            ? usable(r) && r.availability.uses_expiring.length > 0
+            : r.availability.status === f;
+  const list = state.recipes
+    .filter((r) => {
+      if (!matches(r, filter)) return false;
+      if (tag && !r.tags.includes(tag)) return false;
+      if (
+        q &&
+        ![r.name, r.description ?? '', ...r.tags, ...r.ingredients.map((x) => x.name)]
+          .join(' ')
+          .toLowerCase()
+          .includes(q)
+      )
+        return false;
+      return true;
+    })
+    .sort((a, b) =>
+      filter === 'use_up'
+        ? (a.availability.uses_expiring[0]?.days_left ?? 99) -
+          (b.availability.uses_expiring[0]?.days_left ?? 99)
+        : 0,
+    );
+  const tags = [...new Set(state.recipes.flatMap((r) => r.tags))].sort();
+  const count = (f: Filter) => state.recipes.filter((r) => matches(r, f)).length;
   const chip = (f: Filter, text: string) =>
     h(
       'button',
@@ -140,6 +180,9 @@ export function renderRecipes(rerender: () => void): HTMLElement {
         chip('makeable', d.recipe.makeable),
         chip('missing_one', d.recipe.missingOne),
         chip('missing_more', d.recipe.missingMore),
+        chip('with_substitute', d.recipe.withSubstitute),
+        chip('use_up', d.recipe.useUp),
+        chip('alcohol_free', d.recipe.alcoholFree),
         chip('favorites', d.recipe.favorites),
       ),
       h(
@@ -183,7 +226,11 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
       h(
         'li',
         { class: `line line-${l.status}` },
-        h('span', { class: 'mark', 'aria-hidden': 'true' }, l.status === 'available' ? '✓' : '✗'),
+        h(
+          'span',
+          { class: 'mark', 'aria-hidden': 'true' },
+          l.status === 'available' ? '✓' : l.status === 'substituted' ? '≈' : '✗',
+        ),
         h('span', { class: 'amt' }, amount(l.amount, l.unit)),
         h(
           'span',
@@ -195,11 +242,13 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
         h(
           'span',
           { class: 'src' },
-          l.match
-            ? l.match.name
-            : l.status === 'unavailable'
-              ? d.recipe.unusable
-              : d.recipe.missing,
+          l.substitute
+            ? d.recipe.insteadOf(l.substitute.using, l.substitute.note)
+            : l.match
+              ? l.match.name
+              : l.status === 'unavailable'
+                ? d.recipe.unusable
+                : d.recipe.missing,
         ),
       ),
     ),
@@ -293,6 +342,24 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
       : null,
     r.personal.avoided.length
       ? h('p', { class: 'gear-note' }, d.recipe.avoidedNote(r.personal.avoided.join(', ')))
+      : null,
+    r.availability.uses_expiring.length
+      ? h(
+          'p',
+          { class: 'use-up-note' },
+          d.recipe.usesUp(
+            r.availability.uses_expiring
+              .map((u) => `${u.bottle} (${t().badge.useIn(u.days_left)})`)
+              .join(', '),
+          ),
+        )
+      : null,
+    r.cost.amount > 0
+      ? h(
+          'p',
+          { class: 'muted' },
+          d.recipe.cost(money(r.cost.amount, r.cost.currency), r.cost.complete),
+        )
       : null,
     r.strength.abv > 0
       ? h(

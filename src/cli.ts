@@ -10,6 +10,13 @@ import { loadConfig, type Config } from './config.js';
 import { createCtx } from './core/context.js';
 import { readSeedFile, seed } from './core/seed.js';
 import { exportBar, importBar } from './core/backup.js';
+import {
+  exportIngredientsCsv,
+  exportRecipesCsv,
+  importIngredientsCsv,
+  importRecipesCsv,
+  parseCsv,
+} from './core/csv.js';
 import { removeExampleData } from './core/examples.js';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { openDb } from './db/connection.js';
@@ -28,8 +35,10 @@ Commands:
             when the port is free, unless --no-web or SHAKY_WEB_AUTOSTART=false
   seed      Load the example bar from examples/seed.json (--reset wipes first,
             --remove takes the example data out again)
-  export    Write the whole bar as JSON to a file (or stdout without a path)
-  import    Load a JSON export: merge by name, or --replace to wipe first
+  export    Write the whole bar as JSON to a file (or stdout without a path);
+            --csv ingredients|recipes writes a spreadsheet instead
+  import    Load a JSON export (merge by name, --replace wipes first) or a
+            CSV of ingredients or recipes; --dry-run only shows the result
   doctor    Check the setup and print a Claude Desktop config snippet
 
 Options:
@@ -59,6 +68,8 @@ function parse(argv: string[]) {
       reset: { type: 'boolean' },
       remove: { type: 'boolean' },
       replace: { type: 'boolean' },
+      csv: { type: 'string' },
+      'dry-run': { type: 'boolean' },
       file: { type: 'string' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -166,7 +177,8 @@ function cmdSeed(cfg: Config, values: ReturnType<typeof parse>['values']) {
   const file = values.file ? readSeedFile(values.file) : readSeedFile();
   const { result } = seed(createCtx(db, 'cli'), file, {
     reset: values.reset,
-    origin: values.file ? undefined : 'example',
+    // Files shipped in examples/ count as example data and can be removed later.
+    origin: !values.file || /[\\/]examples[\\/]/.test(values.file) ? 'example' : undefined,
   });
   db.close();
   console.log(
@@ -176,18 +188,30 @@ function cmdSeed(cfg: Config, values: ReturnType<typeof parse>['values']) {
   );
 }
 
-function cmdExport(cfg: Config, file: string | undefined) {
+function cmdExport(cfg: Config, file: string | undefined, csv?: string) {
   const db = openDb(cfg.dbFile);
-  const json = JSON.stringify(exportBar(createCtx(db, 'cli')), null, 2);
+  const ctx = createCtx(db, 'cli');
+  const json = csv
+    ? `\uFEFF${csv === 'recipes' ? exportRecipesCsv(ctx) : exportIngredientsCsv(ctx)}`
+    : JSON.stringify(exportBar(ctx), null, 2);
   db.close();
   if (!file) return void process.stdout.write(`${json}\n`);
   writeFileSync(file, `${json}\n`);
   console.log(`Exported to ${file}`);
 }
 
-function cmdImport(cfg: Config, file: string | undefined, replace: boolean) {
-  if (!file) throw new Error('Usage: shaky import <file.json> [--replace]');
+function cmdImport(cfg: Config, file: string | undefined, replace: boolean, dryRun = false) {
+  if (!file) throw new Error('Usage: shaky import <file.json|file.csv> [--replace] [--dry-run]');
   const db = openDb(cfg.dbFile);
+  if (/\.csv$/i.test(file)) {
+    const text = readFileSync(file, 'utf8');
+    const ctx = { ...createCtx(db, 'cli'), dryRun };
+    const isRecipes = 'recipe' in (parseCsv(text)[0] ?? {});
+    const r = isRecipes ? importRecipesCsv(ctx, text) : importIngredientsCsv(ctx, text);
+    db.close();
+    console.log(`${dryRun ? 'Dry run, nothing saved: ' : ''}${JSON.stringify(r.result)}`);
+    return;
+  }
   const { result } = importBar(
     createCtx(db, 'cli'),
     JSON.parse(readFileSync(file, 'utf8')),
@@ -285,9 +309,9 @@ async function main() {
     case 'seed':
       return cmdSeed(cfg, values);
     case 'export':
-      return cmdExport(cfg, positionals[1]);
+      return cmdExport(cfg, positionals[1], values.csv);
     case 'import':
-      return cmdImport(cfg, positionals[1], Boolean(values.replace));
+      return cmdImport(cfg, positionals[1], Boolean(values.replace), Boolean(values['dry-run']));
     case 'doctor':
       return cmdDoctor(cfg);
     default:

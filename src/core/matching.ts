@@ -104,7 +104,17 @@ export function matchesSpec(spec: RecipeIngredient, i: IngredientView): boolean 
   return true;
 }
 
-export type LineStatus = 'available' | 'unavailable' | 'missing';
+export type LineStatus = 'available' | 'substituted' | 'unavailable' | 'missing';
+
+/** "Ginger ale for ginger beer, milder." */
+export interface Substitution {
+  id: number;
+  for_words: string;
+  use_words: string;
+  ratio: number;
+  note: string | null;
+  two_way: boolean;
+}
 
 export interface LineCheck {
   name: string;
@@ -119,6 +129,8 @@ export interface LineCheck {
   unusable?: { id: number; name: string; reason: 'empty' | 'expired' }[];
   /** How many servings the stock covers for this line, when it can be measured. */
   servings?: number;
+  /** Set when a substitution rule covers the line. */
+  substitute?: { using: string; for: string; ratio: number; note: string | null };
 }
 
 function rank(i: IngredientView): number {
@@ -127,7 +139,62 @@ function rank(i: IngredientView): number {
   return expiry * 10 - i.fill_fraction;
 }
 
-export function checkLine(spec: RecipeIngredient, stock: IngredientView[]): LineCheck {
+/** Rules that could stand in for this line, in both directions where allowed. */
+function rulesFor(spec: RecipeIngredient, subs: Substitution[]) {
+  const asked = new Set([...queryOf(spec), ...words(spec.name)]);
+  const out: { use: string; ratio: number; note: string | null; for: string }[] = [];
+  for (const r of subs) {
+    const f = words(r.for_words);
+    const u = words(r.use_words);
+    if (f.length && f.every((w) => asked.has(w)))
+      out.push({ use: r.use_words, ratio: r.ratio, note: r.note, for: r.for_words });
+    else if (r.two_way && u.length && u.every((w) => asked.has(w)))
+      out.push({
+        use: r.for_words,
+        ratio: r.ratio ? 1 / r.ratio : 1,
+        note: r.note,
+        for: r.use_words,
+      });
+  }
+  return out;
+}
+
+export function checkLine(
+  spec: RecipeIngredient,
+  stock: IngredientView[],
+  subs: Substitution[] = [],
+): LineCheck {
+  const direct = checkLineDirect(spec, stock);
+  if (direct.status === 'available' || !subs.length) return direct;
+  for (const rule of rulesFor(spec, subs)) {
+    const alt = checkLineDirect(
+      {
+        ...spec,
+        ingredient_id: undefined,
+        category: undefined,
+        subcategory: rule.use,
+        tags: undefined,
+        exact: false,
+        exclude: spec.exclude,
+        amount: spec.amount ? spec.amount * rule.ratio : spec.amount,
+      },
+      stock,
+    );
+    if (alt.status === 'available') {
+      return {
+        ...alt,
+        name: spec.name,
+        amount: spec.amount,
+        status: 'substituted',
+        substitute: { using: alt.match!.name, for: rule.for, ratio: rule.ratio, note: rule.note },
+        ...(direct.unusable && { unusable: direct.unusable }),
+      };
+    }
+  }
+  return direct;
+}
+
+function checkLineDirect(spec: RecipeIngredient, stock: IngredientView[]): LineCheck {
   const candidates = stock.filter((i) => !i.archived && matchesSpec(spec, i));
   const usable = candidates.filter((i) => i.available).sort((a, b) => rank(a) - rank(b));
   const unusable = candidates
@@ -217,7 +284,7 @@ export function equipmentFor(
   return household[type] ? { name: household[type], type: 'household' } : undefined;
 }
 
-export type RecipeStatus = 'makeable' | 'missing_one' | 'missing_more';
+export type RecipeStatus = 'makeable' | 'with_substitute' | 'missing_one' | 'missing_more';
 
 export interface RecipeCheck {
   recipe_id: number;
@@ -229,6 +296,10 @@ export interface RecipeCheck {
   missing_equipment: string[];
   /** Equipment types covered only by a substitute, e.g. shaker -> "Jam jar". */
   substitutes_used: { type: string; using: string }[];
+  /** In-stock bottles this drink would use up that expire soon, soonest first. */
+  uses_expiring: { line: string; bottle: string; days_left: number }[];
+  /** Lines covered by a stand-in, with the rule's note ("milder"). */
+  substitutions: { line: string; using: string; note: string | null }[];
   /** How many times the drink can be made from stock; null when amounts are unknown. */
   servings_possible: number | null;
   lines: LineCheck[];
@@ -239,14 +310,15 @@ export function checkRecipe(
   stock: IngredientView[],
   equipment: Equipment[],
   household: Household = {},
+  subs: Substitution[] = [],
 ): RecipeCheck {
-  const lines = recipe.ingredients.map((spec) => checkLine(spec, stock));
-  const missing = lines
-    .filter((l) => l.status !== 'available' && !l.optional && !l.garnish)
-    .map((l) => l.name);
+  const lines = recipe.ingredients.map((spec) => checkLine(spec, stock, subs));
+  const ok = (l: LineCheck) => l.status === 'available' || l.status === 'substituted';
+  const missing = lines.filter((l) => !ok(l) && !l.optional && !l.garnish).map((l) => l.name);
   const missing_optional = lines
-    .filter((l) => l.status !== 'available' && (l.optional || l.garnish))
+    .filter((l) => !ok(l) && (l.optional || l.garnish))
     .map((l) => l.name);
+  const substituted = lines.filter((l) => l.status === 'substituted' && !l.optional && !l.garnish);
   const missing_equipment: string[] = [];
   const substitutes_used: { type: string; using: string }[] = [];
   for (const type of requiredEquipment(recipe.steps)) {
@@ -255,10 +327,16 @@ export function checkRecipe(
     else if (e.type !== type) substitutes_used.push({ type, using: e.name });
   }
   const status: RecipeStatus =
-    missing.length === 0 ? 'makeable' : missing.length === 1 ? 'missing_one' : 'missing_more';
+    missing.length === 0
+      ? substituted.length
+        ? 'with_substitute'
+        : 'makeable'
+      : missing.length === 1
+        ? 'missing_one'
+        : 'missing_more';
   const measured = lines.filter((l) => !l.optional && !l.garnish && l.servings !== undefined);
   const servings_possible =
-    status !== 'makeable'
+    status !== 'makeable' && status !== 'with_substitute'
       ? 0
       : measured.length
         ? Math.min(...measured.map((l) => l.servings!))
@@ -271,6 +349,19 @@ export function checkRecipe(
     missing_optional,
     missing_equipment,
     substitutes_used,
+    uses_expiring: lines
+      .flatMap((l) => {
+        const b = l.match ? stock.find((i) => i.id === l.match!.id) : undefined;
+        return b && b.expiring_soon && b.days_left !== null
+          ? [{ line: l.name, bottle: b.name, days_left: b.days_left }]
+          : [];
+      })
+      .sort((a, b) => a.days_left - b.days_left),
+    substitutions: substituted.map((l) => ({
+      line: l.name,
+      using: l.substitute!.using,
+      note: l.substitute!.note,
+    })),
     servings_possible,
     lines,
   };

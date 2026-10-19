@@ -25,6 +25,7 @@ export const CATEGORIES = [
   'garnish',
   'dairy_cream',
   'bitters',
+  'ice',
   'other',
 ] as const;
 
@@ -183,6 +184,20 @@ export const ingredientInputSchema = z.object({
       'Variants of the same product under one entry, e.g. Red Bull: [{name: "Original", quantity: 4}, {name: "Sugarfree", quantity: 2}]. quantity becomes their sum.',
     ),
   best_before: dateSchema.nullish().describe('Best before date while unopened (juice, soda).'),
+  price: z
+    .number()
+    .min(0)
+    .max(100000)
+    .nullish()
+    .describe(
+      'What one bottle, pack or piece cost (setting currency, default EUR). Enables cost per drink.',
+    ),
+  freeze_hours: z
+    .number()
+    .min(0)
+    .max(72)
+    .nullish()
+    .describe('Ice only: hours a fresh batch needs to freeze.'),
   label_color: hexColorSchema
     .nullish()
     .describe('Color of the label, or of the whole can/carton. Separate from the liquid color.'),

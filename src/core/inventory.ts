@@ -185,6 +185,8 @@ const TRACKED = [
   'provides',
   'variants',
   'best_before',
+  'price',
+  'freeze_hours',
   'abv',
   'color',
   'container',

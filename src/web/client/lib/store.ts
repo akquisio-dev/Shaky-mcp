@@ -8,6 +8,7 @@ import {
   type MixLogEntry,
   type Preference,
   type TrashItem,
+  type Substitution,
   type UndoGroup,
   type Template,
   type RecipeWithCheck,
@@ -25,6 +26,7 @@ export interface State {
   mixes: MixLogEntry[];
   preferences: Preference[];
   undoable: UndoGroup[];
+  substitutions: Substitution[];
   trash: TrashItem[];
   preparations: Template[];
   /** Ids that changed through the live feed, for a short wobble. */
@@ -42,6 +44,7 @@ type Slice =
   | 'mixes'
   | 'preferences'
   | 'undoable'
+  | 'substitutions'
   | 'trash'
   | 'preparations';
 
@@ -55,6 +58,7 @@ export const state: State = {
   mixes: [],
   preferences: [],
   undoable: [],
+  substitutions: [],
   trash: [],
   preparations: [],
   flash: new Set(),
@@ -71,6 +75,7 @@ const loaders: Record<Slice, () => Promise<void>> = {
   mixes: async () => void (state.mixes = await api.mixLog()),
   preferences: async () => void (state.preferences = await api.preferences()),
   undoable: async () => void (state.undoable = await api.undoable()),
+  substitutions: async () => void (state.substitutions = await api.substitutions()),
   trash: async () => void (state.trash = await api.trash()),
   preparations: async () => void (state.preparations = await api.preparations()),
 };
@@ -103,6 +108,8 @@ function slicesForEntity(entity: string): Slice[] {
       return ['glassware', 'activity'];
     case 'recipe':
       return ['recipes', 'activity'];
+    case 'substitution':
+      return ['substitutions', 'recipes', 'activity'];
     case 'preference':
       return ['preferences', 'recipes', 'activity'];
     case 'prep':
