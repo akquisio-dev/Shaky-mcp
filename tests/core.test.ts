@@ -319,3 +319,12 @@ describe('fruit counted in pieces', () => {
     expect(getIngredientView(ctx, 'Limes').quantity).toBe(5.5); // 1.5 cl of a 3 cl lime
   });
 });
+
+describe('garnish matching', () => {
+  it('does not take an orange slice from the orange liqueur', () => {
+    const ctx = seededCtx();
+    const sunrise = getRecipeWithCheck(ctx, 'Tequila Sunrise').availability;
+    const slice = sunrise.lines.find((l) => l.name === 'Orange slice');
+    expect(slice?.status).toBe('missing');
+  });
+});

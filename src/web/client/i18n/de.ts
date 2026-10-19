@@ -47,6 +47,7 @@ export const de: Dict = {
     welcome: 'Deine Bar ist leer.',
     welcomeHint: 'Füge die erste Flasche hinzu oder lade mit "shaky seed" eine Beispielbar.',
     warnings: 'Achtung',
+    archived: (n) => `Archiv (${n})`,
     makeable: (n) =>
       n === 1 ? '1 gespeicherter Drink geht gerade' : `${n} gespeicherte Drinks gehen gerade`,
   },

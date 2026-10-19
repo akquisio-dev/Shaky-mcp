@@ -764,6 +764,21 @@ li.wobble {
   animation: wobble 0.7s ease-in-out 2;
 }
 
+/* Archived bottles stay reachable so they can be restored. */
+.archive {
+  color: #fff8e6;
+  font-weight: 600;
+}
+
+.archive summary {
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.archive .chip {
+  color: var(--text);
+}
+
 /* ---------- recipes ---------- */
 
 .toolbar {

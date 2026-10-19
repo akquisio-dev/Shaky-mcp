@@ -71,6 +71,7 @@ export function slicesFor(entity: string): Slice[] {
       return ['shopping', 'activity'];
     case 'location':
     case 'category':
+    case 'settings':
       return ['meta', 'ingredients', 'activity'];
     default:
       return Object.keys(loaders) as Slice[];

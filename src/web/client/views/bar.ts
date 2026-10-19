@@ -156,5 +156,29 @@ export function renderBar(): HTMLElement {
       );
     }),
   );
-  return h('div', { class: 'view' }, head, scene);
+  const archived = state.ingredients.filter((i) => i.archived);
+  return h(
+    'div',
+    { class: 'view' },
+    head,
+    scene,
+    archived.length
+      ? h(
+          'details',
+          { class: 'archive' },
+          h('summary', null, d.bar.archived(archived.length)),
+          h(
+            'div',
+            { class: 'chips' },
+            archived.map((i) =>
+              h(
+                'button',
+                { class: 'chip', type: 'button', onclick: () => openIngredient(i.id) },
+                i.name,
+              ),
+            ),
+          ),
+        )
+      : null,
+  );
 }

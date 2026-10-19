@@ -42,6 +42,7 @@ export const en = {
     welcome: 'Your bar is empty.',
     welcomeHint: 'Add your first bottle, or run "shaky seed" for an example bar.',
     warnings: 'Heads up',
+    archived: (n: number) => `Archived (${n})`,
     makeable: (n: number) =>
       n === 1 ? '1 saved drink you can make now' : `${n} saved drinks you can make now`,
   },

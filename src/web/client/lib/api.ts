@@ -58,7 +58,8 @@ type Mut<T> = { result: T; changes: unknown[] };
 
 export const api = {
   meta: () => req<Meta>('GET', '/meta'),
-  ingredients: () => req<IngredientView[]>('GET', '/ingredients?include_empty=true'),
+  ingredients: () =>
+    req<IngredientView[]>('GET', '/ingredients?include_empty=true&include_archived=true'),
   addIngredient: (b: object) => req<Mut<IngredientView>>('POST', '/ingredients', b),
   updateIngredient: (id: number, b: object) =>
     req<Mut<IngredientView>>('PATCH', `/ingredients/${id}`, b),

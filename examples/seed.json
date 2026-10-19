@@ -157,18 +157,53 @@
     }
   ],
   "equipment": [
-    { "name": "Boston Shaker", "type": "shaker" },
-    { "name": "Jigger 2/4 cl", "type": "jigger" },
-    { "name": "Bar Spoon", "type": "bar_spoon" },
-    { "name": "Hawthorne Strainer", "type": "strainer" },
-    { "name": "Blender", "type": "blender" }
+    {
+      "name": "Boston Shaker",
+      "type": "shaker"
+    },
+    {
+      "name": "Jigger 2/4 cl",
+      "type": "jigger"
+    },
+    {
+      "name": "Bar Spoon",
+      "type": "bar_spoon"
+    },
+    {
+      "name": "Hawthorne Strainer",
+      "type": "strainer"
+    },
+    {
+      "name": "Blender",
+      "type": "blender"
+    }
   ],
   "glassware": [
-    { "name": "Highball", "type": "highball", "count": 6 },
-    { "name": "Tumbler", "type": "rocks", "count": 4 },
-    { "name": "Coupe", "type": "coupe", "count": 2 },
-    { "name": "Hurricane", "type": "hurricane", "count": 2 },
-    { "name": "Wine glass", "type": "wine", "count": 6 }
+    {
+      "name": "Highball",
+      "type": "highball",
+      "count": 6
+    },
+    {
+      "name": "Tumbler",
+      "type": "rocks",
+      "count": 4
+    },
+    {
+      "name": "Coupe",
+      "type": "coupe",
+      "count": 2
+    },
+    {
+      "name": "Hurricane",
+      "type": "hurricane",
+      "count": 2
+    },
+    {
+      "name": "Wine glass",
+      "type": "wine",
+      "count": 6
+    }
   ],
   "recipes": [
     {
@@ -186,7 +221,12 @@
           "amount": 5,
           "unit": "cl"
         },
-        { "name": "Lime juice", "subcategory": "lime juice", "amount": 1.5, "unit": "cl" },
+        {
+          "name": "Lime juice",
+          "subcategory": "lime juice",
+          "amount": 1.5,
+          "unit": "cl"
+        },
         {
           "name": "Ginger beer",
           "category": "mixer",
@@ -196,6 +236,7 @@
         },
         {
           "name": "Lime wedge",
+          "category": "fruit",
           "subcategory": "lime",
           "amount": 1,
           "unit": "wedge",
@@ -203,12 +244,37 @@
         }
       ],
       "steps": [
-        { "action": "add_ice", "note": "Fill the glass with ice." },
-        { "action": "pour", "ingredient": "Vodka", "amount": 5, "unit": "cl" },
-        { "action": "pour", "ingredient": "Lime juice", "amount": 1.5, "unit": "cl" },
-        { "action": "top_up", "ingredient": "Ginger beer", "amount": 12, "unit": "cl" },
-        { "action": "stir", "equipment": "bar_spoon", "duration_s": 5 },
-        { "action": "garnish", "ingredient": "Lime wedge" }
+        {
+          "action": "add_ice",
+          "note": "Fill the glass with ice."
+        },
+        {
+          "action": "pour",
+          "ingredient": "Vodka",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lime juice",
+          "amount": 1.5,
+          "unit": "cl"
+        },
+        {
+          "action": "top_up",
+          "ingredient": "Ginger beer",
+          "amount": 12,
+          "unit": "cl"
+        },
+        {
+          "action": "stir",
+          "equipment": "bar_spoon",
+          "duration_s": 5
+        },
+        {
+          "action": "garnish",
+          "ingredient": "Lime wedge"
+        }
       ]
     },
     {
@@ -219,7 +285,13 @@
       "method": "built",
       "color": "#e6f2f5",
       "ingredients": [
-        { "name": "Gin", "category": "spirit", "subcategory": "gin", "amount": 5, "unit": "cl" },
+        {
+          "name": "Gin",
+          "category": "spirit",
+          "subcategory": "gin",
+          "amount": 5,
+          "unit": "cl"
+        },
         {
           "name": "Tonic water",
           "category": "mixer",
@@ -229,6 +301,7 @@
         },
         {
           "name": "Lime wedge",
+          "category": "fruit",
           "subcategory": "lime",
           "amount": 1,
           "unit": "wedge",
@@ -236,11 +309,28 @@
         }
       ],
       "steps": [
-        { "action": "chill_glass" },
-        { "action": "add_ice" },
-        { "action": "pour", "ingredient": "Gin", "amount": 5, "unit": "cl" },
-        { "action": "top_up", "ingredient": "Tonic water", "amount": 15, "unit": "cl" },
-        { "action": "garnish", "ingredient": "Lime wedge" }
+        {
+          "action": "chill_glass"
+        },
+        {
+          "action": "add_ice"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Gin",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "action": "top_up",
+          "ingredient": "Tonic water",
+          "amount": 15,
+          "unit": "cl"
+        },
+        {
+          "action": "garnish",
+          "ingredient": "Lime wedge"
+        }
       ]
     },
     {
@@ -274,10 +364,25 @@
         }
       ],
       "steps": [
-        { "action": "add_ice" },
-        { "action": "pour", "ingredient": "Lillet Blanc", "amount": 5, "unit": "cl" },
-        { "action": "top_up", "ingredient": "Tonic water", "amount": 10, "unit": "cl" },
-        { "action": "garnish", "ingredient": "Cucumber slice" }
+        {
+          "action": "add_ice"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lillet Blanc",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "action": "top_up",
+          "ingredient": "Tonic water",
+          "amount": 10,
+          "unit": "cl"
+        },
+        {
+          "action": "garnish",
+          "ingredient": "Cucumber slice"
+        }
       ]
     },
     {
@@ -304,6 +409,7 @@
         },
         {
           "name": "Fresh berries",
+          "category": "fruit",
           "subcategory": "berry",
           "amount": 3,
           "unit": "piece",
@@ -318,11 +424,29 @@
         }
       ],
       "steps": [
-        { "action": "add_ice" },
-        { "action": "pour", "ingredient": "Lillet Blanc", "amount": 5, "unit": "cl" },
-        { "action": "top_up", "ingredient": "Wild berry tonic", "amount": 10, "unit": "cl" },
-        { "action": "garnish", "ingredient": "Fresh berries" },
-        { "action": "garnish", "ingredient": "Mint sprig" }
+        {
+          "action": "add_ice"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lillet Blanc",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "action": "top_up",
+          "ingredient": "Wild berry tonic",
+          "amount": 10,
+          "unit": "cl"
+        },
+        {
+          "action": "garnish",
+          "ingredient": "Fresh berries"
+        },
+        {
+          "action": "garnish",
+          "ingredient": "Mint sprig"
+        }
       ]
     },
     {
@@ -356,6 +480,7 @@
         },
         {
           "name": "Lime wedge",
+          "category": "fruit",
           "subcategory": "lime",
           "amount": 1,
           "unit": "wedge",
@@ -363,9 +488,21 @@
         }
       ],
       "steps": [
-        { "action": "add_ice" },
-        { "action": "pour", "ingredient": "Ginger beer", "amount": 10, "unit": "cl" },
-        { "action": "pour", "ingredient": "Lime juice", "amount": 1, "unit": "cl" },
+        {
+          "action": "add_ice"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Ginger beer",
+          "amount": 10,
+          "unit": "cl"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lime juice",
+          "amount": 1,
+          "unit": "cl"
+        },
         {
           "action": "pour",
           "ingredient": "Dark rum",
@@ -373,7 +510,10 @@
           "unit": "cl",
           "note": "Float it over the back of a bar spoon."
         },
-        { "action": "garnish", "ingredient": "Lime wedge" }
+        {
+          "action": "garnish",
+          "ingredient": "Lime wedge"
+        }
       ]
     },
     {
@@ -391,10 +531,21 @@
           "amount": 5,
           "unit": "cl"
         },
-        { "name": "Pineapple juice", "subcategory": "pineapple juice", "amount": 9, "unit": "cl" },
-        { "name": "Cream of coconut", "subcategory": "coconut cream", "amount": 3, "unit": "cl" },
+        {
+          "name": "Pineapple juice",
+          "subcategory": "pineapple juice",
+          "amount": 9,
+          "unit": "cl"
+        },
+        {
+          "name": "Cream of coconut",
+          "subcategory": "coconut cream",
+          "amount": 3,
+          "unit": "cl"
+        },
         {
           "name": "Pineapple wedge",
+          "category": "fruit",
           "subcategory": "pineapple",
           "amount": 1,
           "unit": "wedge",
@@ -423,10 +574,22 @@
           "unit": "cl",
           "equipment": "blender"
         },
-        { "action": "add_ice", "note": "One cup of crushed ice into the blender." },
-        { "action": "blend", "duration_s": 20 },
-        { "action": "pour", "note": "Pour into the glass." },
-        { "action": "garnish", "ingredient": "Pineapple wedge" }
+        {
+          "action": "add_ice",
+          "note": "One cup of crushed ice into the blender."
+        },
+        {
+          "action": "blend",
+          "duration_s": 20
+        },
+        {
+          "action": "pour",
+          "note": "Pour into the glass."
+        },
+        {
+          "action": "garnish",
+          "ingredient": "Pineapple wedge"
+        }
       ]
     },
     {
@@ -444,16 +607,52 @@
           "amount": 5,
           "unit": "cl"
         },
-        { "name": "Lime juice", "subcategory": "lime juice", "amount": 1.5, "unit": "cl" },
-        { "name": "Grapefruit soda", "subcategory": "grapefruit", "amount": 12, "unit": "cl" },
-        { "name": "Salt rim", "subcategory": "salt", "unit": "to_taste", "garnish": true }
+        {
+          "name": "Lime juice",
+          "subcategory": "lime juice",
+          "amount": 1.5,
+          "unit": "cl"
+        },
+        {
+          "name": "Grapefruit soda",
+          "subcategory": "grapefruit",
+          "amount": 12,
+          "unit": "cl"
+        },
+        {
+          "name": "Salt rim",
+          "subcategory": "salt",
+          "unit": "to_taste",
+          "garnish": true
+        }
       ],
       "steps": [
-        { "action": "garnish", "ingredient": "Salt rim", "note": "Salt half the rim first." },
-        { "action": "add_ice" },
-        { "action": "pour", "ingredient": "Tequila blanco", "amount": 5, "unit": "cl" },
-        { "action": "pour", "ingredient": "Lime juice", "amount": 1.5, "unit": "cl" },
-        { "action": "top_up", "ingredient": "Grapefruit soda", "amount": 12, "unit": "cl" }
+        {
+          "action": "garnish",
+          "ingredient": "Salt rim",
+          "note": "Salt half the rim first."
+        },
+        {
+          "action": "add_ice"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Tequila blanco",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lime juice",
+          "amount": 1.5,
+          "unit": "cl"
+        },
+        {
+          "action": "top_up",
+          "ingredient": "Grapefruit soda",
+          "amount": 12,
+          "unit": "cl"
+        }
       ]
     },
     {
@@ -471,7 +670,12 @@
           "amount": 5,
           "unit": "cl"
         },
-        { "name": "Lime juice", "subcategory": "lime juice", "amount": 3, "unit": "cl" },
+        {
+          "name": "Lime juice",
+          "subcategory": "lime juice",
+          "amount": 3,
+          "unit": "cl"
+        },
         {
           "name": "Simple syrup",
           "category": "syrup",
@@ -479,7 +683,12 @@
           "amount": 2,
           "unit": "cl"
         },
-        { "name": "Mint leaves", "subcategory": "mint", "amount": 8, "unit": "leaf" },
+        {
+          "name": "Mint leaves",
+          "subcategory": "mint",
+          "amount": 8,
+          "unit": "leaf"
+        },
         {
           "name": "Soda water",
           "category": "mixer",
@@ -489,14 +698,50 @@
         }
       ],
       "steps": [
-        { "action": "pour", "ingredient": "Mint leaves", "amount": 8, "unit": "leaf" },
-        { "action": "pour", "ingredient": "Simple syrup", "amount": 2, "unit": "cl" },
-        { "action": "pour", "ingredient": "Lime juice", "amount": 3, "unit": "cl" },
-        { "action": "muddle", "duration_s": 5, "note": "Press gently, do not shred the mint." },
-        { "action": "add_ice", "note": "Crushed ice." },
-        { "action": "pour", "ingredient": "White rum", "amount": 5, "unit": "cl" },
-        { "action": "top_up", "ingredient": "Soda water", "amount": 6, "unit": "cl" },
-        { "action": "stir", "equipment": "bar_spoon", "duration_s": 5 }
+        {
+          "action": "pour",
+          "ingredient": "Mint leaves",
+          "amount": 8,
+          "unit": "leaf"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Simple syrup",
+          "amount": 2,
+          "unit": "cl"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lime juice",
+          "amount": 3,
+          "unit": "cl"
+        },
+        {
+          "action": "muddle",
+          "duration_s": 5,
+          "note": "Press gently, do not shred the mint."
+        },
+        {
+          "action": "add_ice",
+          "note": "Crushed ice."
+        },
+        {
+          "action": "pour",
+          "ingredient": "White rum",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "action": "top_up",
+          "ingredient": "Soda water",
+          "amount": 6,
+          "unit": "cl"
+        },
+        {
+          "action": "stir",
+          "equipment": "bar_spoon",
+          "duration_s": 5
+        }
       ]
     },
     {
@@ -514,7 +759,12 @@
           "amount": 5,
           "unit": "cl"
         },
-        { "name": "Lime juice", "subcategory": "lime juice", "amount": 2, "unit": "cl" },
+        {
+          "name": "Lime juice",
+          "subcategory": "lime juice",
+          "amount": 2,
+          "unit": "cl"
+        },
         {
           "name": "Simple syrup",
           "category": "syrup",
@@ -522,7 +772,12 @@
           "amount": 1.5,
           "unit": "cl"
         },
-        { "name": "Strawberries", "subcategory": "strawberry", "amount": 5, "unit": "piece" }
+        {
+          "name": "Strawberries",
+          "subcategory": "strawberry",
+          "amount": 5,
+          "unit": "piece"
+        }
       ],
       "steps": [
         {
@@ -553,9 +808,17 @@
           "unit": "cl",
           "equipment": "blender"
         },
-        { "action": "add_ice" },
-        { "action": "blend", "duration_s": 25 },
-        { "action": "pour", "note": "Pour into a chilled coupe." }
+        {
+          "action": "add_ice"
+        },
+        {
+          "action": "blend",
+          "duration_s": 25
+        },
+        {
+          "action": "pour",
+          "note": "Pour into a chilled coupe."
+        }
       ]
     },
     {
@@ -573,7 +836,12 @@
           "amount": 5,
           "unit": "cl"
         },
-        { "name": "Orange juice", "subcategory": "orange juice", "amount": 10, "unit": "cl" },
+        {
+          "name": "Orange juice",
+          "subcategory": "orange juice",
+          "amount": 10,
+          "unit": "cl"
+        },
         {
           "name": "Grenadine",
           "category": "syrup",
@@ -583,6 +851,7 @@
         },
         {
           "name": "Orange slice",
+          "category": "fruit",
           "subcategory": "orange",
           "amount": 1,
           "unit": "slice",
@@ -590,9 +859,21 @@
         }
       ],
       "steps": [
-        { "action": "add_ice" },
-        { "action": "pour", "ingredient": "Tequila blanco", "amount": 5, "unit": "cl" },
-        { "action": "pour", "ingredient": "Orange juice", "amount": 10, "unit": "cl" },
+        {
+          "action": "add_ice"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Tequila blanco",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Orange juice",
+          "amount": 10,
+          "unit": "cl"
+        },
         {
           "action": "pour",
           "ingredient": "Grenadine",
@@ -600,7 +881,10 @@
           "unit": "cl",
           "note": "Pour slowly so it sinks to the bottom."
         },
-        { "action": "garnish", "ingredient": "Orange slice" }
+        {
+          "action": "garnish",
+          "ingredient": "Orange slice"
+        }
       ]
     },
     {
@@ -639,7 +923,12 @@
           "amount": 1.5,
           "unit": "cl"
         },
-        { "name": "Lime juice", "subcategory": "lime juice", "amount": 3, "unit": "cl" },
+        {
+          "name": "Lime juice",
+          "subcategory": "lime juice",
+          "amount": 3,
+          "unit": "cl"
+        },
         {
           "name": "Mint sprig",
           "subcategory": "mint",
@@ -677,9 +966,18 @@
           "unit": "cl",
           "equipment": "shaker"
         },
-        { "action": "add_ice", "equipment": "shaker" },
-        { "action": "shake", "duration_s": 12 },
-        { "action": "strain", "note": "Over crushed ice." },
+        {
+          "action": "add_ice",
+          "equipment": "shaker"
+        },
+        {
+          "action": "shake",
+          "duration_s": 12
+        },
+        {
+          "action": "strain",
+          "note": "Over crushed ice."
+        },
         {
           "action": "pour",
           "ingredient": "Dark rum",
@@ -687,7 +985,10 @@
           "unit": "cl",
           "note": "Float on top."
         },
-        { "action": "garnish", "ingredient": "Mint sprig" }
+        {
+          "action": "garnish",
+          "ingredient": "Mint sprig"
+        }
       ]
     },
     {
@@ -705,10 +1006,30 @@
           "amount": 6,
           "unit": "cl"
         },
-        { "name": "Pineapple juice", "subcategory": "pineapple juice", "amount": 12, "unit": "cl" },
-        { "name": "Orange juice", "subcategory": "orange juice", "amount": 3, "unit": "cl" },
-        { "name": "Cream of coconut", "subcategory": "coconut cream", "amount": 3, "unit": "cl" },
-        { "name": "Nutmeg", "subcategory": "nutmeg", "unit": "to_taste", "garnish": true }
+        {
+          "name": "Pineapple juice",
+          "subcategory": "pineapple juice",
+          "amount": 12,
+          "unit": "cl"
+        },
+        {
+          "name": "Orange juice",
+          "subcategory": "orange juice",
+          "amount": 3,
+          "unit": "cl"
+        },
+        {
+          "name": "Cream of coconut",
+          "subcategory": "coconut cream",
+          "amount": 3,
+          "unit": "cl"
+        },
+        {
+          "name": "Nutmeg",
+          "subcategory": "nutmeg",
+          "unit": "to_taste",
+          "garnish": true
+        }
       ],
       "steps": [
         {
@@ -739,10 +1060,23 @@
           "unit": "cl",
           "equipment": "shaker"
         },
-        { "action": "add_ice", "equipment": "shaker" },
-        { "action": "shake", "duration_s": 15 },
-        { "action": "strain", "note": "Into a glass with fresh ice." },
-        { "action": "garnish", "ingredient": "Nutmeg", "note": "Grate fresh nutmeg on top." }
+        {
+          "action": "add_ice",
+          "equipment": "shaker"
+        },
+        {
+          "action": "shake",
+          "duration_s": 15
+        },
+        {
+          "action": "strain",
+          "note": "Into a glass with fresh ice."
+        },
+        {
+          "action": "garnish",
+          "ingredient": "Nutmeg",
+          "note": "Grate fresh nutmeg on top."
+        }
       ]
     }
   ],

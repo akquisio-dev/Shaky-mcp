@@ -150,3 +150,38 @@ describe('HTTP server', () => {
     }
   });
 });
+
+describe('static web client', () => {
+  it('serves files from an absolute client dir with SPA fallback', async () => {
+    const { mkdirSync, writeFileSync } = await import('node:fs');
+    const dir = mkdtempSync(join(tmpdir(), 'shaky-client-'));
+    try {
+      mkdirSync(join(dir, 'assets'));
+      writeFileSync(join(dir, 'index.html'), '<!doctype html><title>Shaky</title>');
+      writeFileSync(join(dir, 'assets', 'a.js'), 'console.log(1)');
+      const { app: a } = createApp(seededCtx().db, {
+        host: '127.0.0.1',
+        port: 8787,
+        clientDir: dir,
+      });
+      const index = await a.request(`${BASE}/`);
+      expect(index.status).toBe(200);
+      expect(await index.text()).toContain('<title>Shaky</title>');
+      expect((await a.request(`${BASE}/assets/a.js`)).status).toBe(200);
+      const fallback = await a.request(`${BASE}/recipes`);
+      expect(fallback.status).toBe(200);
+      expect(await fallback.text()).toContain('Shaky');
+      expect((await a.request(`${BASE}/api/health`)).headers.get('content-type')).toContain('json');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('logs settings changes with source web', async () => {
+    const { app: a } = app();
+    const r = await a.request(`${BASE}/api/settings`, json('PATCH', { language: 'de' }));
+    expect((await r.json()).language).toBe('de');
+    const [last] = await (await a.request(`${BASE}/api/activity?limit=1`)).json();
+    expect(last).toMatchObject({ source: 'web', entity: 'settings' });
+  });
+});

@@ -15,7 +15,7 @@ import {
   setGlassware,
   setLocation,
 } from '../core/catalog.js';
-import { createCtx, ShakyError } from '../core/context.js';
+import { createCtx, mutate, ShakyError } from '../core/context.js';
 import {
   addIngredient,
   archiveIngredient,
@@ -238,9 +238,21 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
   api.get('/settings', (c) => c.json(getAllSettings(db)));
   api.patch('/settings', async (c) => {
     const b = settingsSchema.parse(await body(c));
-    db.transaction(() => {
-      for (const [k, v] of Object.entries(b)) if (v !== undefined) setSetting(db, k, v);
-    })();
+    done(
+      mutate(ctx, (cs) => {
+        for (const [k, v] of Object.entries(b)) {
+          if (v === undefined) continue;
+          setSetting(db, k, v);
+          cs.record({
+            entity: 'settings',
+            entity_id: null,
+            action: 'updated',
+            summary: `Setting ${k} set to ${JSON.stringify(v)}.`,
+            data: { key: k, value: v },
+          });
+        }
+      }),
+    );
     return c.json(getAllSettings(db));
   });
 
