@@ -1,6 +1,6 @@
 {
   "name": "shaky-mcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Shaky, your local AI bartender: an MCP server that knows exactly what is in your home bar, plus a playful web UI on localhost.",
   "type": "module",
   "license": "MIT",

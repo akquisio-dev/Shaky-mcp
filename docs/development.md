@@ -12,12 +12,16 @@ src/
                     fill levels and deduction, fuzzy matching, recipes, mixing,
                     shopping, overview, seed. Every write goes through mutate(),
                     which writes the activity row in the same transaction.
+  game/             mixing game rules, pure TypeScript shared by browser and server:
+                    reducer, glasses, colors, recipe steps -> vessels, scoring
   mcp/              MCP server: tools, resources, prompts (thin layer over core/)
   web/              Hono app: REST API (/api), SSE (/api/events), MCP over HTTP (/mcp)
     events.ts       EventBus + ActivityWatcher (tails the activity table)
-    client/         Vite app (plain TypeScript): views/, svg/, i18n/, lib/
+    client/         Vite app (plain TypeScript): views/, svg/, i18n/, lib/,
+                    game/ (scene, vessel art, training flow)
 examples/seed.json  example bar and recipes for `shaky seed`
-tests/              Vitest: db, core, MCP (in-memory client), REST/SSE/HTTP
+tests/              Vitest: db, core, game (incl. perfect-play replay of every seed
+                    recipe), training, MCP (in-memory client), REST/SSE/HTTP
 ```
 
 How live updates work: every change writes a row to `activity` in the same transaction. The web server polls `MAX(id)` of that table every 400 ms and pushes new rows over Server-Sent Events. Because it reads the table rather than listening in-process, it also sees changes made by the separate stdio process Claude Desktop starts.

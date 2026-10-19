@@ -2154,3 +2154,9 @@ body.is-dragging {
   font-size: 2.2rem;
   margin: 0;
 }
+
+/* Gestures in the game never select text. */
+.game-stage {
+  user-select: none;
+  -webkit-user-select: none;
+}

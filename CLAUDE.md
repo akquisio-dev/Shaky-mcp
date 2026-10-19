@@ -19,18 +19,26 @@ Local AI bartender: an MCP server that reliably knows what is in the user's home
 db/    connection (WAL, busy_timeout), migrate (checksums), repos (SQL + row mapping)
 core/  domain logic, shared by MCP and web. Writes go through mutate(ctx, fn), which runs
        the change and its activity row in one IMMEDIATE transaction and returns `changes`.
+       backup.ts (export/import = seed format), training.ts (trainings, server-side scoring)
+game/  pure, isomorphic mixing game: types, reducer (apply/replay), glasses, color mixing,
+       recipe -> vessels/perfect play, scoring. No DOM, no zod: browser and server share it.
 mcp/   tools.ts (thin wrappers, text + compact JSON, mutations list what changed),
        server.ts (resources, prompts, instructions). One McpServer per transport/session.
 web/   api.ts (REST, source "web"), events.ts (ActivityWatcher tails `activity` -> EventBus),
        mcpHttp.ts (Streamable HTTP /mcp), server.ts (Host/Origin guard, SSE, static),
-       client/ (Vite, plain TS: lib/ store, api, live; views/; svg/; i18n/)
+       client/ (Vite, plain TS): lib/ store, api, live, units; views/; svg/; i18n/;
+       game/ scene.ts (persistent DOM/SVG scene), art.ts (vessels), training.ts (offers, submit)
 ```
 
-Cross-process live updates: the stdio MCP process and the web server are separate processes. The web server polls `activity` (id > last) every 400 ms and pushes SSE `change` events. Stage 2/3 game events will use the same bus/stream with new event types.
+Cross-process live updates: the stdio MCP process and the web server are separate processes. The web server polls `activity` (id > last) every 400 ms and pushes SSE `change` events. Trainings ride the same feed (entity `training`).
 
 Matching (`core/matching.ts`): every word of the recipe line (subcategory/tags, else name; synonyms like brown=dark, blanco=white) must appear on the bottle (name, brand, subcategory, tags, category). Empty, archived and expired items are unavailable. Optional and garnish lines never block. Missing equipment is reported, not blocking.
 
 Stock (`core/fillLevel.ts`): fill level is the default, exact ml optional. Deducting from a level-only bottle stores an ml estimate (`amount_is_estimate`). Pieces via `quantity`; juice from fruit via `yield_ml`. A finished bottle with spares opens the next one.
+
+Game rules (`src/game`): actions record quantities, never timestamps (`POUR_ML_PER_S` is the one shared constant). `stepVessels` routes recipe steps to shaker/blender/mixing glass/glass (floats after straining go to the glass, a bare `pour` after blending is the pour-over). `tests/game.test.ts` replays every seed recipe's perfect play and requires >= 95 points: keep that green when touching steps or scoring. The server ignores the client's `line` claims for real bottles and resolves them with `matchesSpec`; virtual sandbox bottles count only in sandbox trainings.
+
+Web shell: header, main and footer are permanent nodes; `render()` swaps contents. The game scene is mounted once and never rebuilt during a gesture (`busy` flag), so live updates cannot break a pour.
 
 ## Commands
 
@@ -45,6 +53,6 @@ node dist/cli.js doctor
 
 Use `SHAKY_DATA_DIR` pointing to a scratch folder for manual tests. On the dev vServer, browse via `ssh -L 8787:127.0.0.1:8787`.
 
-## Roadmap (prepare, do not build yet)
+## Status
 
-Stage 2: the bar view becomes a drag-and-drop mixing game (pour, shake, blend, muddle, layered glass in ingredient colors, sandbox switch). Put the engine under `src/web/client/game/`, reuse `state` and the SSE stream. Stage 3: `start_training` MCP tool loads a recipe into the game, the game scores order/amounts against `steps`, the AI reads the result; plus a "mix for real" step view that deducts stock.
+Stage 1 (inventory, recipes, web), stage 2 (mixing game, sandbox, mix for real) and stage 3 (AI trainings) are built. Open ideas: a design reference from the owner may still change the look; more glass shapes; sound effects.
