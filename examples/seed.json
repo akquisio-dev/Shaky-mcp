@@ -1,0 +1,756 @@
+{
+  "ingredients": [
+    {
+      "name": "London Dry Gin",
+      "category": "spirit",
+      "subcategory": "london dry gin",
+      "tags": ["gin"],
+      "abv": 40,
+      "color": "#e6f2f5",
+      "location": "shelf",
+      "fill_level": "three_quarters",
+      "bottle_size_ml": 700,
+      "opened_days_ago": 60,
+      "flavor_notes": "juniper, citrus peel"
+    },
+    {
+      "name": "Vodka",
+      "category": "spirit",
+      "subcategory": "vodka",
+      "abv": 40,
+      "color": "#f2f6f8",
+      "location": "freezer",
+      "fill_level": "half",
+      "bottle_size_ml": 700,
+      "opened_days_ago": 90
+    },
+    {
+      "name": "White Rum",
+      "category": "spirit",
+      "subcategory": "white rum",
+      "tags": ["rum"],
+      "abv": 37.5,
+      "color": "#f7f3e8",
+      "location": "shelf",
+      "fill_level": "full",
+      "bottle_size_ml": 700,
+      "flavor_notes": "light, sugar cane"
+    },
+    {
+      "name": "Bourbon",
+      "category": "spirit",
+      "subcategory": "bourbon whiskey",
+      "tags": ["whiskey"],
+      "abv": 40,
+      "color": "#b5651d",
+      "location": "shelf",
+      "fill_level": "half",
+      "bottle_size_ml": 700,
+      "opened_days_ago": 120,
+      "flavor_notes": "vanilla, caramel, oak"
+    },
+    {
+      "name": "Tequila Blanco",
+      "category": "spirit",
+      "subcategory": "tequila blanco",
+      "tags": ["tequila", "100% agave"],
+      "abv": 38,
+      "color": "#f4f1e1",
+      "location": "shelf",
+      "fill_level": "full",
+      "bottle_size_ml": 700,
+      "notes": "100 % agave"
+    },
+    {
+      "name": "Cointreau",
+      "brand": "Cointreau",
+      "category": "liqueur",
+      "subcategory": "orange liqueur",
+      "tags": ["triple sec", "curacao"],
+      "abv": 40,
+      "color": "#f8e7c4",
+      "location": "shelf",
+      "fill_level": "three_quarters",
+      "bottle_size_ml": 700,
+      "opened_days_ago": 45
+    },
+    {
+      "name": "Angostura Bitters",
+      "brand": "Angostura",
+      "category": "bitters",
+      "subcategory": "aromatic bitters",
+      "tags": ["angostura"],
+      "abv": 44.7,
+      "color": "#7a1f12",
+      "location": "shelf",
+      "fill_level": "half",
+      "bottle_size_ml": 200,
+      "opened_days_ago": 200
+    },
+    {
+      "name": "Lillet Blanc",
+      "brand": "Lillet",
+      "category": "wine_aperitif",
+      "subcategory": "aromatised wine",
+      "tags": ["lillet", "aperitif"],
+      "abv": 17,
+      "color": "#f3d36b",
+      "location": "fridge",
+      "fill_level": "half",
+      "bottle_size_ml": 750,
+      "opened_days_ago": 30,
+      "flavor_notes": "honey, orange blossom"
+    },
+    {
+      "name": "Tonic Water",
+      "category": "mixer",
+      "subcategory": "tonic water",
+      "tags": ["tonic"],
+      "color": "#eef7f9",
+      "location": "pantry",
+      "fill_level": "full",
+      "bottle_size_ml": 200,
+      "quantity": 4
+    },
+    {
+      "name": "Ginger Beer",
+      "category": "mixer",
+      "subcategory": "ginger beer",
+      "color": "#e9d9a6",
+      "location": "pantry",
+      "fill_level": "full",
+      "bottle_size_ml": 200,
+      "quantity": 4,
+      "flavor_notes": "spicy ginger"
+    },
+    {
+      "name": "Soda Water",
+      "category": "mixer",
+      "subcategory": "soda water",
+      "tags": ["club soda", "sparkling water"],
+      "color": "#f0f8fb",
+      "location": "pantry",
+      "fill_level": "full",
+      "bottle_size_ml": 1000,
+      "quantity": 2
+    },
+    {
+      "name": "Pineapple Juice",
+      "category": "juice",
+      "subcategory": "pineapple juice",
+      "color": "#f7d54a",
+      "location": "fridge",
+      "fill_level": "three_quarters",
+      "bottle_size_ml": 1000,
+      "opened_days_ago": 2
+    },
+    {
+      "name": "Limes",
+      "category": "fruit",
+      "subcategory": "lime",
+      "tags": ["lime juice", "citrus"],
+      "color": "#9acd32",
+      "location": "fridge",
+      "fill_level": "full",
+      "quantity": 6,
+      "yield_ml": 30
+    }
+  ],
+  "equipment": [
+    { "name": "Boston Shaker", "type": "shaker" },
+    { "name": "Jigger 2/4 cl", "type": "jigger" },
+    { "name": "Bar Spoon", "type": "bar_spoon" },
+    { "name": "Hawthorne Strainer", "type": "strainer" },
+    { "name": "Blender", "type": "blender" }
+  ],
+  "glassware": [
+    { "name": "Highball", "type": "highball", "count": 6 },
+    { "name": "Tumbler", "type": "rocks", "count": 4 },
+    { "name": "Coupe", "type": "coupe", "count": 2 },
+    { "name": "Hurricane", "type": "hurricane", "count": 2 },
+    { "name": "Wine glass", "type": "wine", "count": 6 }
+  ],
+  "recipes": [
+    {
+      "name": "Moscow Mule",
+      "description": "Vodka, lime and spicy ginger beer over lots of ice.",
+      "tags": ["longdrink", "refreshing", "classic"],
+      "glass": "copper_mug",
+      "method": "built",
+      "color": "#e9d9a6",
+      "ingredients": [
+        {
+          "name": "Vodka",
+          "category": "spirit",
+          "subcategory": "vodka",
+          "amount": 5,
+          "unit": "cl"
+        },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 1.5, "unit": "cl" },
+        {
+          "name": "Ginger beer",
+          "category": "mixer",
+          "subcategory": "ginger beer",
+          "amount": 12,
+          "unit": "cl"
+        },
+        {
+          "name": "Lime wedge",
+          "subcategory": "lime",
+          "amount": 1,
+          "unit": "wedge",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        { "action": "add_ice", "note": "Fill the glass with ice." },
+        { "action": "pour", "ingredient": "Vodka", "amount": 5, "unit": "cl" },
+        { "action": "pour", "ingredient": "Lime juice", "amount": 1.5, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Ginger beer", "amount": 12, "unit": "cl" },
+        { "action": "stir", "equipment": "bar_spoon", "duration_s": 5 },
+        { "action": "garnish", "ingredient": "Lime wedge" }
+      ]
+    },
+    {
+      "name": "Gin & Tonic",
+      "description": "The bar's safest bet.",
+      "tags": ["longdrink", "refreshing", "classic"],
+      "glass": "highball",
+      "method": "built",
+      "color": "#e6f2f5",
+      "ingredients": [
+        { "name": "Gin", "category": "spirit", "subcategory": "gin", "amount": 5, "unit": "cl" },
+        {
+          "name": "Tonic water",
+          "category": "mixer",
+          "subcategory": "tonic",
+          "amount": 15,
+          "unit": "cl"
+        },
+        {
+          "name": "Lime wedge",
+          "subcategory": "lime",
+          "amount": 1,
+          "unit": "wedge",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        { "action": "chill_glass" },
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Gin", "amount": 5, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Tonic water", "amount": 15, "unit": "cl" },
+        { "action": "garnish", "ingredient": "Lime wedge" }
+      ]
+    },
+    {
+      "name": "Lillet Tonic",
+      "description": "Light, bitter-sweet aperitif. Good way to use up an open Lillet.",
+      "tags": ["longdrink", "aperitif", "low abv"],
+      "glass": "wine",
+      "method": "built",
+      "color": "#f3d36b",
+      "ingredients": [
+        {
+          "name": "Lillet Blanc",
+          "category": "wine_aperitif",
+          "subcategory": "lillet",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "name": "Tonic water",
+          "category": "mixer",
+          "subcategory": "tonic",
+          "amount": 10,
+          "unit": "cl"
+        },
+        {
+          "name": "Cucumber slice",
+          "subcategory": "cucumber",
+          "amount": 2,
+          "unit": "slice",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Lillet Blanc", "amount": 5, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Tonic water", "amount": 10, "unit": "cl" },
+        { "action": "garnish", "ingredient": "Cucumber slice" }
+      ]
+    },
+    {
+      "name": "Lillet Wild Berry",
+      "description": "Lillet with wild berry tonic, berries and mint. Summer in a wine glass.",
+      "tags": ["longdrink", "fruity", "aperitif", "low abv"],
+      "glass": "wine",
+      "method": "built",
+      "color": "#c2416b",
+      "ingredients": [
+        {
+          "name": "Lillet Blanc",
+          "category": "wine_aperitif",
+          "subcategory": "lillet",
+          "amount": 5,
+          "unit": "cl"
+        },
+        {
+          "name": "Wild berry tonic",
+          "category": "mixer",
+          "subcategory": "wild berry",
+          "amount": 10,
+          "unit": "cl"
+        },
+        {
+          "name": "Fresh berries",
+          "subcategory": "berry",
+          "amount": 3,
+          "unit": "piece",
+          "garnish": true
+        },
+        {
+          "name": "Mint sprig",
+          "subcategory": "mint",
+          "amount": 1,
+          "unit": "sprig",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Lillet Blanc", "amount": 5, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Wild berry tonic", "amount": 10, "unit": "cl" },
+        { "action": "garnish", "ingredient": "Fresh berries" },
+        { "action": "garnish", "ingredient": "Mint sprig" }
+      ]
+    },
+    {
+      "name": "Dark 'n' Stormy",
+      "description": "Dark rum floated on ginger beer. Moody and spicy.",
+      "tags": ["longdrink", "spicy", "classic"],
+      "glass": "highball",
+      "method": "built",
+      "color": "#6b3e1f",
+      "ingredients": [
+        {
+          "name": "Dark rum",
+          "category": "spirit",
+          "subcategory": "dark rum",
+          "amount": 6,
+          "unit": "cl"
+        },
+        {
+          "name": "Ginger beer",
+          "category": "mixer",
+          "subcategory": "ginger beer",
+          "amount": 10,
+          "unit": "cl"
+        },
+        {
+          "name": "Lime juice",
+          "subcategory": "lime juice",
+          "amount": 1,
+          "unit": "cl",
+          "optional": true
+        },
+        {
+          "name": "Lime wedge",
+          "subcategory": "lime",
+          "amount": 1,
+          "unit": "wedge",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Ginger beer", "amount": 10, "unit": "cl" },
+        { "action": "pour", "ingredient": "Lime juice", "amount": 1, "unit": "cl" },
+        {
+          "action": "pour",
+          "ingredient": "Dark rum",
+          "amount": 6,
+          "unit": "cl",
+          "note": "Float it over the back of a bar spoon."
+        },
+        { "action": "garnish", "ingredient": "Lime wedge" }
+      ]
+    },
+    {
+      "name": "Piña Colada",
+      "description": "Rum, pineapple and coconut, blended creamy. Instant beach.",
+      "tags": ["tiki", "beach", "fruity", "creamy", "blended"],
+      "glass": "hurricane",
+      "method": "blended",
+      "color": "#fbeec1",
+      "ingredients": [
+        {
+          "name": "White rum",
+          "category": "spirit",
+          "subcategory": "white rum",
+          "amount": 5,
+          "unit": "cl"
+        },
+        { "name": "Pineapple juice", "subcategory": "pineapple juice", "amount": 9, "unit": "cl" },
+        { "name": "Cream of coconut", "subcategory": "coconut cream", "amount": 3, "unit": "cl" },
+        {
+          "name": "Pineapple wedge",
+          "subcategory": "pineapple",
+          "amount": 1,
+          "unit": "wedge",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        {
+          "action": "pour",
+          "ingredient": "White rum",
+          "amount": 5,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Pineapple juice",
+          "amount": 9,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Cream of coconut",
+          "amount": 3,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        { "action": "add_ice", "note": "One cup of crushed ice into the blender." },
+        { "action": "blend", "duration_s": 20 },
+        { "action": "pour", "note": "Pour into the glass." },
+        { "action": "garnish", "ingredient": "Pineapple wedge" }
+      ]
+    },
+    {
+      "name": "Paloma",
+      "description": "Tequila with grapefruit and lime, Mexico's favourite highball.",
+      "tags": ["longdrink", "fruity", "refreshing"],
+      "glass": "highball",
+      "method": "built",
+      "color": "#f7a8a0",
+      "ingredients": [
+        {
+          "name": "Tequila blanco",
+          "category": "spirit",
+          "subcategory": "tequila",
+          "amount": 5,
+          "unit": "cl"
+        },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 1.5, "unit": "cl" },
+        { "name": "Grapefruit soda", "subcategory": "grapefruit", "amount": 12, "unit": "cl" },
+        { "name": "Salt rim", "subcategory": "salt", "unit": "to_taste", "garnish": true }
+      ],
+      "steps": [
+        { "action": "garnish", "ingredient": "Salt rim", "note": "Salt half the rim first." },
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Tequila blanco", "amount": 5, "unit": "cl" },
+        { "action": "pour", "ingredient": "Lime juice", "amount": 1.5, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Grapefruit soda", "amount": 12, "unit": "cl" }
+      ]
+    },
+    {
+      "name": "Mojito",
+      "description": "Mint, lime and white rum, lengthened with soda.",
+      "tags": ["longdrink", "refreshing", "classic", "beach"],
+      "glass": "highball",
+      "method": "muddled",
+      "color": "#c9e8b0",
+      "ingredients": [
+        {
+          "name": "White rum",
+          "category": "spirit",
+          "subcategory": "white rum",
+          "amount": 5,
+          "unit": "cl"
+        },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 3, "unit": "cl" },
+        {
+          "name": "Simple syrup",
+          "category": "syrup",
+          "subcategory": "sugar",
+          "amount": 2,
+          "unit": "cl"
+        },
+        { "name": "Mint leaves", "subcategory": "mint", "amount": 8, "unit": "leaf" },
+        {
+          "name": "Soda water",
+          "category": "mixer",
+          "subcategory": "soda",
+          "amount": 6,
+          "unit": "cl"
+        }
+      ],
+      "steps": [
+        { "action": "pour", "ingredient": "Mint leaves", "amount": 8, "unit": "leaf" },
+        { "action": "pour", "ingredient": "Simple syrup", "amount": 2, "unit": "cl" },
+        { "action": "pour", "ingredient": "Lime juice", "amount": 3, "unit": "cl" },
+        { "action": "muddle", "duration_s": 5, "note": "Press gently, do not shred the mint." },
+        { "action": "add_ice", "note": "Crushed ice." },
+        { "action": "pour", "ingredient": "White rum", "amount": 5, "unit": "cl" },
+        { "action": "top_up", "ingredient": "Soda water", "amount": 6, "unit": "cl" },
+        { "action": "stir", "equipment": "bar_spoon", "duration_s": 5 }
+      ]
+    },
+    {
+      "name": "Strawberry Daiquiri",
+      "description": "Frozen strawberries, white rum and lime, blended smooth.",
+      "tags": ["fruity", "beach", "blended"],
+      "glass": "coupe",
+      "method": "blended",
+      "color": "#e8445a",
+      "ingredients": [
+        {
+          "name": "White rum",
+          "category": "spirit",
+          "subcategory": "white rum",
+          "amount": 5,
+          "unit": "cl"
+        },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 2, "unit": "cl" },
+        {
+          "name": "Simple syrup",
+          "category": "syrup",
+          "subcategory": "sugar",
+          "amount": 1.5,
+          "unit": "cl"
+        },
+        { "name": "Strawberries", "subcategory": "strawberry", "amount": 5, "unit": "piece" }
+      ],
+      "steps": [
+        {
+          "action": "pour",
+          "ingredient": "Strawberries",
+          "amount": 5,
+          "unit": "piece",
+          "equipment": "blender"
+        },
+        {
+          "action": "pour",
+          "ingredient": "White rum",
+          "amount": 5,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lime juice",
+          "amount": 2,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Simple syrup",
+          "amount": 1.5,
+          "unit": "cl",
+          "equipment": "blender"
+        },
+        { "action": "add_ice" },
+        { "action": "blend", "duration_s": 25 },
+        { "action": "pour", "note": "Pour into a chilled coupe." }
+      ]
+    },
+    {
+      "name": "Tequila Sunrise",
+      "description": "Orange juice and tequila with a grenadine sunrise at the bottom.",
+      "tags": ["longdrink", "fruity", "beach", "layered"],
+      "glass": "highball",
+      "method": "built",
+      "color": "#f6862a",
+      "ingredients": [
+        {
+          "name": "Tequila blanco",
+          "category": "spirit",
+          "subcategory": "tequila",
+          "amount": 5,
+          "unit": "cl"
+        },
+        { "name": "Orange juice", "subcategory": "orange juice", "amount": 10, "unit": "cl" },
+        {
+          "name": "Grenadine",
+          "category": "syrup",
+          "subcategory": "grenadine",
+          "amount": 1.5,
+          "unit": "cl"
+        },
+        {
+          "name": "Orange slice",
+          "subcategory": "orange",
+          "amount": 1,
+          "unit": "slice",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        { "action": "add_ice" },
+        { "action": "pour", "ingredient": "Tequila blanco", "amount": 5, "unit": "cl" },
+        { "action": "pour", "ingredient": "Orange juice", "amount": 10, "unit": "cl" },
+        {
+          "action": "pour",
+          "ingredient": "Grenadine",
+          "amount": 1.5,
+          "unit": "cl",
+          "note": "Pour slowly so it sinks to the bottom."
+        },
+        { "action": "garnish", "ingredient": "Orange slice" }
+      ]
+    },
+    {
+      "name": "Mai Tai",
+      "description": "The tiki classic: two rums, orange liqueur, orgeat and lime.",
+      "tags": ["tiki", "beach", "fruity", "classic"],
+      "glass": "rocks",
+      "method": "shaken",
+      "color": "#d98c3a",
+      "ingredients": [
+        {
+          "name": "Dark rum",
+          "category": "spirit",
+          "subcategory": "dark rum",
+          "amount": 3,
+          "unit": "cl"
+        },
+        {
+          "name": "White rum",
+          "category": "spirit",
+          "subcategory": "white rum",
+          "amount": 3,
+          "unit": "cl"
+        },
+        {
+          "name": "Orange liqueur",
+          "category": "liqueur",
+          "subcategory": "orange liqueur",
+          "amount": 1.5,
+          "unit": "cl"
+        },
+        {
+          "name": "Orgeat",
+          "category": "syrup",
+          "subcategory": "orgeat",
+          "amount": 1.5,
+          "unit": "cl"
+        },
+        { "name": "Lime juice", "subcategory": "lime juice", "amount": 3, "unit": "cl" },
+        {
+          "name": "Mint sprig",
+          "subcategory": "mint",
+          "amount": 1,
+          "unit": "sprig",
+          "garnish": true
+        }
+      ],
+      "steps": [
+        {
+          "action": "pour",
+          "ingredient": "White rum",
+          "amount": 3,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Orange liqueur",
+          "amount": 1.5,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Orgeat",
+          "amount": 1.5,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Lime juice",
+          "amount": 3,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        { "action": "add_ice", "equipment": "shaker" },
+        { "action": "shake", "duration_s": 12 },
+        { "action": "strain", "note": "Over crushed ice." },
+        {
+          "action": "pour",
+          "ingredient": "Dark rum",
+          "amount": 3,
+          "unit": "cl",
+          "note": "Float on top."
+        },
+        { "action": "garnish", "ingredient": "Mint sprig" }
+      ]
+    },
+    {
+      "name": "Painkiller",
+      "description": "Dark rum, pineapple, orange and coconut with fresh nutmeg on top.",
+      "tags": ["tiki", "beach", "fruity", "creamy"],
+      "glass": "hurricane",
+      "method": "shaken",
+      "color": "#f4c26b",
+      "ingredients": [
+        {
+          "name": "Dark rum",
+          "category": "spirit",
+          "subcategory": "dark rum",
+          "amount": 6,
+          "unit": "cl"
+        },
+        { "name": "Pineapple juice", "subcategory": "pineapple juice", "amount": 12, "unit": "cl" },
+        { "name": "Orange juice", "subcategory": "orange juice", "amount": 3, "unit": "cl" },
+        { "name": "Cream of coconut", "subcategory": "coconut cream", "amount": 3, "unit": "cl" },
+        { "name": "Nutmeg", "subcategory": "nutmeg", "unit": "to_taste", "garnish": true }
+      ],
+      "steps": [
+        {
+          "action": "pour",
+          "ingredient": "Dark rum",
+          "amount": 6,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Pineapple juice",
+          "amount": 12,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Orange juice",
+          "amount": 3,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        {
+          "action": "pour",
+          "ingredient": "Cream of coconut",
+          "amount": 3,
+          "unit": "cl",
+          "equipment": "shaker"
+        },
+        { "action": "add_ice", "equipment": "shaker" },
+        { "action": "shake", "duration_s": 15 },
+        { "action": "strain", "note": "Into a glass with fresh ice." },
+        { "action": "garnish", "ingredient": "Nutmeg", "note": "Grate fresh nutmeg on top." }
+      ]
+    }
+  ],
+  "shopping_list": [
+    {
+      "name": "Dark rum",
+      "reason": "Dark 'n' Stormy, Mai Tai and Painkiller need it",
+      "priority": "high"
+    }
+  ]
+}
