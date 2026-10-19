@@ -25,12 +25,10 @@ jobs:
           cache: npm
       - name: Install
         shell: bash
-        # On failure, surface npm's error lines as annotations (visible without log access).
+        # On failure, surface npm's last output lines as annotations (visible without log access).
         run: |
-          npm ci || {
-            for f in "$(npm config get cache)"/_logs/*.log; do
-              grep -E "verbose stack|error" "$f" | tail -8 | while IFS= read -r l; do echo "::error::${l}"; done
-            done
+          npm ci --loglevel=warn > npm-ci.log 2>&1 || {
+            grep -v '^\s*$' npm-ci.log | tail -10 | while IFS= read -r l; do echo "::error::${l}"; done
             exit 1
           }
       - run: npm run lint
