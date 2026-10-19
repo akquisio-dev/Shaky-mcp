@@ -10,9 +10,12 @@ import { startWaiting, waitingTraining } from '../game/training.js';
 export function badges(i: IngredientView): HTMLElement[] {
   const d = t().badge;
   const out: HTMLElement[] = [];
-  if (i.fill_level === 'empty' || i.quantity <= 0)
+  if (i.fill_level === 'empty' || i.quantity <= 0) {
+    // Empty is the only thing worth saying about an empty bottle.
     out.push(h('span', { class: 'badge b-empty' }, d.empty));
-  else if (i.low) out.push(h('span', { class: 'badge b-low' }, d.low));
+    return out;
+  }
+  if (i.low) out.push(h('span', { class: 'badge b-low' }, d.low));
   if (i.expired) out.push(h('span', { class: 'badge b-expired' }, d.expired));
   else if (i.expiring_soon && i.days_left !== null)
     out.push(h('span', { class: 'badge b-soon' }, d.useIn(i.days_left)));

@@ -27,6 +27,8 @@ import { expiryInfo, type ExpiryInfo } from './shelfLife.js';
 /** An ingredient plus everything derived from it (expiry, availability ...). */
 export interface IngredientView extends Ingredient, ExpiryInfo {
   fill_fraction: number;
+  /** Usable volume in ml across all bottles (or juice from all pieces), null if unknown. */
+  stock_ml: number | null;
   display_color: string;
   low: boolean;
   available: boolean;
@@ -47,9 +49,17 @@ export function viewIngredient(
   const fill_fraction =
     i.amount_ml !== null && size ? Math.min(1, i.amount_ml / size) : LEVEL_FRACTION[i.fill_level];
   const empty = i.fill_level === 'empty' || i.quantity <= 0;
+  let stock_ml: number | null = null;
+  if (empty) stock_ml = 0;
+  else if (i.yield_ml) stock_ml = i.quantity * i.yield_ml;
+  else if (i.amount_ml !== null) stock_ml = i.amount_ml + Math.max(0, i.quantity - 1) * (size ?? 0);
+  else if (size) stock_ml = fill_fraction * size + Math.max(0, i.quantity - 1) * size;
   return {
     ...i,
     ...exp,
+    // Empty things no longer warn about expiring.
+    expiring_soon: exp.expiring_soon && !empty,
+    stock_ml: stock_ml === null ? null : Math.round(stock_ml),
     fill_fraction: Math.round(fill_fraction * 100) / 100,
     display_color: i.color ?? d?.color ?? '#c9a66b',
     low:
@@ -157,6 +167,7 @@ const TRACKED = [
   'category',
   'subcategory',
   'tags',
+  'provides',
   'abv',
   'color',
   'flavor_notes',
@@ -180,7 +191,28 @@ function normalizeDate(v: string | null | undefined): string | null | undefined 
 
 export function addIngredient(ctx: Ctx, input: IngredientInput) {
   const data = ingredientInputSchema.parse(input);
-  return mutate(ctx, (cs) => {
+  return mutate(ctx, (cs) => insertOne(ctx, cs, data));
+}
+
+/** Adds many ingredients in one transaction: all or nothing. */
+export function addIngredients(ctx: Ctx, inputs: IngredientInput[]) {
+  const items = inputs.map((x, n) => {
+    const r = ingredientInputSchema.safeParse(x);
+    if (!r.success) {
+      throw new ShakyError(
+        'invalid',
+        `Item ${n + 1} (${String((x as { name?: unknown }).name ?? '?')}): ${r.error.issues
+          .map((i) => `${i.path.join('.')}: ${i.message}`)
+          .join('; ')}`,
+      );
+    }
+    return r.data;
+  });
+  return mutate(ctx, (cs) => items.map((data) => insertOne(ctx, cs, data)));
+}
+
+function insertOne(ctx: Ctx, cs: ChangeSet, data: ReturnType<typeof ingredientInputSchema.parse>) {
+  {
     const d = getCategoryDefaults(ctx.db, data.category);
     const location = data.location ?? d?.default_location ?? 'shelf';
     if (ensureLocation(ctx.db, location)) {
@@ -204,6 +236,7 @@ export function addIngredient(ctx: Ctx, input: IngredientInput) {
       opened_at: normalizeDate(data.opened_at),
       expires_at: normalizeDate(data.expires_at),
       tags: data.tags ?? [],
+      provides: data.provides ?? [],
       location,
       fill_level: data.fill_level ?? 'full',
       quantity: data.quantity ?? 1,
@@ -220,7 +253,7 @@ export function addIngredient(ctx: Ctx, input: IngredientInput) {
       data: { name: view.name, category: view.category, location: view.location },
     });
     return view;
-  });
+  }
 }
 
 function applyPatch(
@@ -340,6 +373,13 @@ export function writeStock(
 
 export function getExpiring(ctx: Ctx, days: number, includeExpired = true) {
   return listIngredientViews(ctx)
-    .filter((i) => i.days_left !== null && i.days_left <= days && (includeExpired || !i.expired))
+    .filter(
+      (i) =>
+        i.days_left !== null &&
+        i.days_left <= days &&
+        i.fill_level !== 'empty' &&
+        i.quantity > 0 &&
+        (includeExpired || !i.expired),
+    )
     .sort((a, b) => (a.days_left ?? 0) - (b.days_left ?? 0));
 }

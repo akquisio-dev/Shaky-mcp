@@ -62,7 +62,8 @@ const DATA_TABLES = [
  * Loads example data. Existing items (same name) are left alone, so running
  * it twice is harmless. With reset, all bar data is wiped first.
  */
-export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean } = {}) {
+/** origin 'example' marks rows from the example file so they can be removed later. */
+export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean; origin?: 'example' } = {}) {
   const data = seedFileSchema.parse(file);
   return mutate(ctx, (cs) => {
     if (opts.reset) for (const t of DATA_TABLES) ctx.db.prepare(`DELETE FROM ${t}`).run();
@@ -78,6 +79,7 @@ export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean } = {}) {
       const location = i.location ?? d?.default_location ?? 'shelf';
       ensureLocation(ctx.db, location);
       insertIngredient(ctx.db, {
+        origin: opts.origin ?? null,
         ...i,
         tags: i.tags ?? [],
         location,
@@ -98,6 +100,7 @@ export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean } = {}) {
     for (const e of data.equipment) {
       if (findEquipmentByName(ctx.db, e.name)) continue;
       insertEquipment(ctx.db, {
+        origin: opts.origin ?? null,
         ...e,
         available: e.available ?? true,
         substitutes_for: e.substitutes_for ?? [],
@@ -108,12 +111,19 @@ export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean } = {}) {
     }
     for (const g of data.glassware) {
       if (findGlassByName(ctx.db, g.name)) continue;
-      insertGlass(ctx.db, { ...g, count: g.count ?? 1, created_at: ts, updated_at: ts });
+      insertGlass(ctx.db, {
+        ...g,
+        count: g.count ?? 1,
+        origin: opts.origin ?? null,
+        created_at: ts,
+        updated_at: ts,
+      });
       added.glassware++;
     }
     for (const r of data.recipes) {
       if (findRecipeByName(ctx.db, r.name)) continue;
       insertRecipe(ctx.db, {
+        origin: opts.origin ?? null,
         ...r,
         tags: r.tags ?? [],
         source: r.source ?? 'user',
@@ -125,6 +135,7 @@ export function seed(ctx: Ctx, file: SeedFile, opts: { reset?: boolean } = {}) {
     for (const s of data.shopping_list) {
       if (findOpenShoppingByName(ctx.db, s.name)) continue;
       insertShopping(ctx.db, {
+        origin: opts.origin ?? null,
         ...s,
         priority: s.priority ?? 'normal',
         done: false,

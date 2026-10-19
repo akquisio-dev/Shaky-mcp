@@ -3,14 +3,21 @@ import { t } from './i18n.js';
 import { mascotSvg } from '../svg/art.js';
 
 /** Opens a modal dialog. Returns a close function. */
-export function openDialog(title: string, body: Node, opts: { wide?: boolean } = {}): () => void {
+export function openDialog(
+  title: string,
+  body: Node,
+  opts: { wide?: boolean; xwide?: boolean } = {},
+): () => void {
   const close = () => {
     dlg.close();
     dlg.remove();
   };
   const dlg = h(
     'dialog',
-    { class: `sheet${opts.wide ? ' wide' : ''}`, onclose: () => dlg.remove() },
+    {
+      class: `sheet${opts.wide ? ' wide' : ''}${opts.xwide ? ' xwide' : ''}`,
+      onclose: () => dlg.remove(),
+    },
     h(
       'header',
       { class: 'sheet-head' },

@@ -10,6 +10,7 @@ import {
   listIngredientViews,
   markOpened,
   setFillLevel,
+  updateIngredientFields,
 } from '../src/core/inventory.js';
 import { findMakeable, getRecipeWithCheck, saveRecipe } from '../src/core/recipes.js';
 import { logMix } from '../src/core/mixing.js';
@@ -120,6 +121,7 @@ describe('matching', () => {
       subcategory: null,
       tags: [],
       archived: false,
+      provides: [],
       ...p,
     }) as IngredientView;
   const spec = (p: object) => recipeIngredientSchema.parse({ name: 'x', ...p });
@@ -359,5 +361,98 @@ describe('backup', () => {
     const { result } = importBar(ctx, exportBar(ctx), 'merge');
     expect(result.ingredients).toBe(0);
     expect(() => importBar(ctx, { recipes: [{ name: 'x' }] })).toThrow();
+  });
+});
+
+describe('setup feedback (v1.1)', () => {
+  const ing = (p: Partial<IngredientView>): IngredientView =>
+    ({
+      id: 1,
+      name: 'x',
+      brand: null,
+      category: 'spirit',
+      subcategory: null,
+      tags: [],
+      provides: [],
+      archived: false,
+      ...p,
+    }) as IngredientView;
+  const spec = (p: object) => recipeIngredientSchema.parse({ name: 'x', ...p });
+
+  it('lets a tag or provided phrase beat the recipe category (limes for lime juice)', () => {
+    const limes = ing({ name: 'Limes', category: 'fruit', tags: ['lime juice'] });
+    expect(matchesSpec(spec({ category: 'juice', subcategory: 'lime juice' }), limes)).toBe(true);
+    const lemons = ing({
+      name: 'Lemons',
+      category: 'fruit',
+      provides: ['lemon juice', 'lemon zest'],
+    });
+    expect(matchesSpec(spec({ category: 'juice', subcategory: 'lemon juice' }), lemons)).toBe(true);
+    expect(matchesSpec(spec({ category: 'garnish', subcategory: 'lemon zest' }), lemons)).toBe(
+      true,
+    );
+    // A partial tag is not enough to override the category.
+    expect(
+      matchesSpec(
+        spec({ category: 'juice', subcategory: 'lime' }),
+        ing({ category: 'fruit', tags: ['lime juice'] }),
+      ),
+    ).toBe(false);
+  });
+
+  it('can keep flavored variants out with exact or exclude', () => {
+    const wild = ing({
+      name: 'Schweppes Wild Berry',
+      category: 'mixer',
+      subcategory: 'wild berry tonic water',
+    });
+    const plain = ing({ name: 'Tonic Water', category: 'mixer', subcategory: 'tonic water' });
+    expect(matchesSpec(spec({ subcategory: 'tonic' }), wild)).toBe(true);
+    expect(matchesSpec(spec({ subcategory: 'tonic water', exact: true }), wild)).toBe(false);
+    expect(matchesSpec(spec({ subcategory: 'tonic water', exact: true }), plain)).toBe(true);
+    expect(matchesSpec(spec({ subcategory: 'tonic', exclude: ['wild berry'] }), wild)).toBe(false);
+    expect(matchesSpec(spec({ subcategory: 'tonic', exclude: ['wild berry'] }), plain)).toBe(true);
+  });
+
+  it('says how many times a drink can be made', () => {
+    const ctx = seededCtx();
+    // Vodka half of 700 = 350 ml / 50 = 7; ginger beer 4 x 200 / 120 = 6; limes 6 x 30 / 15 = 12.
+    expect(getRecipeWithCheck(ctx, 'Moscow Mule').availability.servings_possible).toBe(6);
+    updateIngredientFields(ctx, 'Limes', { quantity: 1 });
+    expect(getRecipeWithCheck(ctx, 'Moscow Mule').availability.servings_possible).toBe(2);
+    expect(getRecipeWithCheck(ctx, 'Paloma').availability.servings_possible).toBe(0);
+  });
+
+  it('does not warn that empty things expire', () => {
+    const ctx = seededCtx();
+    setFillLevel(ctx, 'Pineapple Juice', 'empty');
+    const w = barOverview(ctx).warnings.filter((x) => x.name === 'Pineapple Juice');
+    expect(w.map((x) => x.kind)).toEqual(['empty']);
+    expect(getExpiring(ctx, 30).map((i) => i.name)).not.toContain('Pineapple Juice');
+  });
+
+  it('stirs with a household spoon when there is no bar spoon', () => {
+    const ctx = seededCtx();
+    setEquipment(ctx, { name: 'Bar Spoon', remove: true });
+    const mule = getRecipeWithCheck(ctx, 'Moscow Mule').availability;
+    expect(mule.missing_equipment).toEqual([]);
+    expect(mule.substitutes_used).toEqual([{ type: 'bar_spoon', using: 'spoon' }]);
+  });
+});
+
+describe('example data from older bars', () => {
+  it('finds unchanged example rows even without the origin mark', async () => {
+    const { countExampleData, removeExampleData } = await import('../src/core/examples.js');
+    const ctx = ctxFor(freshDb());
+    const { seed: load, readSeedFile } = await import('../src/core/seed.js');
+    load(ctx, readSeedFile()); // like a 1.0 bar: no origin
+    const later = ctxFor(ctx.db, 'web', new Date(NOW.getTime() + 60_000));
+    updateIngredientFields(later, 'Bourbon', { notes: 'my favourite' });
+    const n = countExampleData(ctx);
+    removeExampleData(ctx);
+    expect(n).toBeGreaterThan(30);
+    expect(listIngredientViews(ctx, { include_empty: true }).map((i) => i.name)).toEqual([
+      'Bourbon',
+    ]);
   });
 });

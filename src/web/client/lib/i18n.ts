@@ -48,6 +48,8 @@ function sentence(a: Activity, who: string): string {
     const what = de
       ? `${n.ingredients ?? 0} Zutaten, ${n.recipes ?? 0} Rezepte, ${n.equipment ?? 0} Werkzeuge, ${n.glassware ?? 0} Gläser`
       : `${n.ingredients ?? 0} ingredients, ${n.recipes ?? 0} recipes, ${n.equipment ?? 0} tools, ${n.glassware ?? 0} glasses`;
+    if (a.action === 'examples_removed')
+      return de ? `${who} hat die Beispieldaten entfernt` : `${who} removed the example data`;
     if (a.action === 'reset')
       return de ? `${who} hat die Bar ersetzt: ${what}` : `${who} replaced the bar: ${what}`;
     return de ? `${who} hat Daten geladen: ${what}` : `${who} loaded data: ${what}`;

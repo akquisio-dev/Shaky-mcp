@@ -148,6 +148,11 @@ export const ingredientInputSchema = z.object({
   tags: tagsSchema
     .optional()
     .describe('Free tags. Tags also count for recipe matching, e.g. tag limes with "lime juice".'),
+  provides: tagsSchema
+    .optional()
+    .describe(
+      'What this item supplies besides itself, e.g. limes: ["lime juice", "lime zest", "lime wedge"]. A recipe line asking for one of these matches even if its category differs.',
+    ),
   abv: z.number().min(0).max(100).nullish(),
   color: hexColorSchema.nullish(),
   flavor_notes: z.string().trim().max(300).nullish(),
@@ -196,6 +201,17 @@ export const recipeIngredientSchema = z
       .optional()
       .describe('Matches any bottle whose subcategory/name/tags contain these words.'),
     tags: z.array(z.string().trim().min(1)).max(10).optional(),
+    exact: z
+      .boolean()
+      .optional()
+      .describe(
+        'Strict match: the bottle may not carry extra qualifiers, so "tonic water" does not match "wild berry tonic water".',
+      ),
+    exclude: z
+      .array(z.string().trim().min(1))
+      .max(10)
+      .optional()
+      .describe('Words that rule a bottle out, e.g. ["wild berry", "pink"].'),
     amount: z.number().positive().max(10000).optional(),
     unit: z.enum(UNITS).default('cl'),
     optional: z.boolean().default(false),

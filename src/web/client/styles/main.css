@@ -888,6 +888,14 @@ dialog.sheet.wide {
   width: min(780px, calc(100vw - 2rem));
 }
 
+dialog.sheet.xwide {
+  width: min(1180px, calc(100vw - 2rem));
+}
+
+.add-row.add-row-2 {
+  grid-template-columns: 1fr 1fr auto;
+}
+
 dialog.sheet::backdrop {
   background: rgba(20, 10, 30, 0.55);
 }
@@ -1415,7 +1423,7 @@ dialog.sheet::backdrop {
 
 .ing-row,
 .ing-head {
-  grid-template-columns: 1.3fr 1.5fr 1.3fr 4rem 5.5rem auto auto 2rem;
+  grid-template-columns: 1.2fr 1.4fr 1.2fr 3.6rem 5rem 5.4rem 5.6rem 4.4rem 1fr 2rem;
 }
 
 .ing-head {

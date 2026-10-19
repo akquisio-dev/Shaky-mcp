@@ -53,23 +53,54 @@ function bag(i: IngredientView): Set<string> {
     ...words(i.brand),
     ...words(i.subcategory),
     ...i.tags.flatMap(words),
+    ...i.provides.flatMap(words),
     ...words(i.category.replace(/_/g, ' ')),
   ]);
 }
 
-/** Does this bottle satisfy the recipe line (ignoring whether it is in stock)? */
+const sameWords = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((w) => b.includes(w));
+
+/** The words a recipe line asks for. */
+function queryOf(spec: RecipeIngredient): string[] {
+  if (spec.subcategory || spec.tags?.length)
+    return [...words(spec.subcategory), ...(spec.tags ?? []).flatMap(words)];
+  return spec.category ? [] : words(spec.name);
+}
+
+/**
+ * Does this bottle satisfy the recipe line (ignoring whether it is in stock)?
+ * Every word the line asks for must appear on the bottle. A whole phrase the
+ * bottle provides (or a tag that is exactly the phrase) beats the category, so
+ * limes that provide "lime juice" serve a "lime juice" line of category juice.
+ */
 export function matchesSpec(spec: RecipeIngredient, i: IngredientView): boolean {
   if (spec.ingredient_id !== undefined) return spec.ingredient_id === i.id;
-  if (spec.category && spec.category !== i.category) return false;
-  const query =
-    spec.subcategory || spec.tags?.length
-      ? [...words(spec.subcategory), ...(spec.tags ?? []).flatMap(words)]
-      : spec.category
-        ? []
-        : words(spec.name);
-  if (query.length === 0) return Boolean(spec.category);
+  const query = queryOf(spec);
   const b = bag(i);
-  return query.every((w) => b.has(w));
+  if (
+    spec.exclude?.some((x) => {
+      const w = words(x);
+      return w.length > 0 && w.every((y) => b.has(y));
+    })
+  )
+    return false;
+  const provided =
+    query.length > 0 &&
+    (i.provides.some((p) => query.every((w) => words(p).includes(w))) ||
+      i.tags.some((t) => sameWords(words(t), query)));
+  if (provided) return true;
+  if (spec.category && spec.category !== i.category) return false;
+  if (query.length === 0) return Boolean(spec.category);
+  if (!query.every((w) => b.has(w))) return false;
+  if (spec.exact) {
+    // No extra qualifiers: every word describing the bottle must be asked for.
+    const own = words(i.subcategory ?? i.name).filter(
+      (w) => !words(i.category.replace(/_/g, ' ')).includes(w),
+    );
+    return own.every((w) => query.includes(w));
+  }
+  return true;
 }
 
 export type LineStatus = 'available' | 'unavailable' | 'missing';
@@ -85,6 +116,8 @@ export interface LineCheck {
   match?: { id: number; name: string; fill_level: string; location: string };
   /** Bottles that would match but are empty or expired. */
   unusable?: { id: number; name: string; reason: 'empty' | 'expired' }[];
+  /** How many servings the stock covers for this line, when it can be measured. */
+  servings?: number;
 }
 
 function rank(i: IngredientView): number {
@@ -104,6 +137,7 @@ export function checkLine(spec: RecipeIngredient, stock: IngredientView[]): Line
       reason: i.expired ? ('expired' as const) : ('empty' as const),
     }));
   const best = usable[0];
+  const servings = servingsFor(spec, usable);
   return {
     name: spec.name,
     amount: spec.amount,
@@ -115,7 +149,35 @@ export function checkLine(spec: RecipeIngredient, stock: IngredientView[]): Line
       match: { id: best.id, name: best.name, fill_level: best.fill_level, location: best.location },
     }),
     ...(unusable.length && { unusable }),
+    ...(servings !== undefined && { servings }),
   };
+}
+
+const ML_PER: Record<string, number> = {
+  ml: 1,
+  cl: 10,
+  oz: 29.5735,
+  dash: 0.9,
+  barspoon: 5,
+  tsp: 5,
+  tbsp: 15,
+};
+
+/** Servings the matching stock covers, or undefined when it cannot be measured. */
+function servingsFor(spec: RecipeIngredient, usable: IngredientView[]): number | undefined {
+  if (!spec.amount || !usable.length) return usable.length ? undefined : 0;
+  const perMl = ML_PER[spec.unit];
+  if (perMl !== undefined) {
+    const need = spec.amount * perMl;
+    if (usable.some((i) => i.stock_ml === null)) return undefined;
+    const have = usable.reduce((s, i) => s + (i.stock_ml ?? 0), 0);
+    return Math.floor(have / need + 1e-9);
+  }
+  if (spec.unit === 'piece' || spec.unit === 'scoop') {
+    const have = usable.reduce((s, i) => s + i.quantity, 0);
+    return Math.floor(have / spec.amount + 1e-9);
+  }
+  return undefined;
 }
 
 const IMPLIED_EQUIPMENT: Partial<Record<StepAction, string>> = {
@@ -135,10 +197,23 @@ export function requiredEquipment(steps: Step[]): string[] {
   return [...types];
 }
 
-/** Available equipment that covers a type, directly or as a substitute. */
-export function equipmentFor(type: string, equipment: Equipment[]): Equipment | undefined {
+/** Household things assumed to be in any kitchen, e.g. a spoon for stirring. */
+export type Household = Record<string, string>;
+
+/**
+ * Available equipment that covers a type: the real tool, a registered
+ * substitute, or a household item (only names it, nothing to manage).
+ */
+export function equipmentFor(
+  type: string,
+  equipment: Equipment[],
+  household: Household = {},
+): { name: string; type: string } | undefined {
   const avail = equipment.filter((e) => e.available);
-  return avail.find((e) => e.type === type) ?? avail.find((e) => e.substitutes_for.includes(type));
+  const real =
+    avail.find((e) => e.type === type) ?? avail.find((e) => e.substitutes_for.includes(type));
+  if (real) return real;
+  return household[type] ? { name: household[type], type: 'household' } : undefined;
 }
 
 export type RecipeStatus = 'makeable' | 'missing_one' | 'missing_more';
@@ -153,6 +228,8 @@ export interface RecipeCheck {
   missing_equipment: string[];
   /** Equipment types covered only by a substitute, e.g. shaker -> "Jam jar". */
   substitutes_used: { type: string; using: string }[];
+  /** How many times the drink can be made from stock; null when amounts are unknown. */
+  servings_possible: number | null;
   lines: LineCheck[];
 }
 
@@ -160,6 +237,7 @@ export function checkRecipe(
   recipe: Recipe,
   stock: IngredientView[],
   equipment: Equipment[],
+  household: Household = {},
 ): RecipeCheck {
   const lines = recipe.ingredients.map((spec) => checkLine(spec, stock));
   const missing = lines
@@ -171,12 +249,19 @@ export function checkRecipe(
   const missing_equipment: string[] = [];
   const substitutes_used: { type: string; using: string }[] = [];
   for (const type of requiredEquipment(recipe.steps)) {
-    const e = equipmentFor(type, equipment);
+    const e = equipmentFor(type, equipment, household);
     if (!e) missing_equipment.push(type);
     else if (e.type !== type) substitutes_used.push({ type, using: e.name });
   }
   const status: RecipeStatus =
     missing.length === 0 ? 'makeable' : missing.length === 1 ? 'missing_one' : 'missing_more';
+  const measured = lines.filter((l) => !l.optional && !l.garnish && l.servings !== undefined);
+  const servings_possible =
+    status !== 'makeable'
+      ? 0
+      : measured.length
+        ? Math.min(...measured.map((l) => l.servings!))
+        : null;
   return {
     recipe_id: recipe.id,
     name: recipe.name,
@@ -185,6 +270,7 @@ export function checkRecipe(
     missing_optional,
     missing_equipment,
     substitutes_used,
+    servings_possible,
     lines,
   };
 }

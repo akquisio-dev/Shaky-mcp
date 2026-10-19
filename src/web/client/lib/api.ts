@@ -100,5 +100,7 @@ export const api = {
   startTraining: (id: number) => req<Mut<Training>>('POST', `/trainings/${id}/start`, {}),
   submitTraining: (id: number, actions: unknown[]) =>
     req<Mut<Training>>('POST', `/trainings/${id}/submit`, { actions }),
+  examples: () => req<{ count: number }>('GET', '/examples'),
+  removeExamples: () => req<Mut<{ total: number }>>('DELETE', '/examples'),
   settings: (b: object) => req<Record<string, unknown>>('PATCH', '/settings', b),
 };

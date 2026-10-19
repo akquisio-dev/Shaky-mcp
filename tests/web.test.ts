@@ -26,7 +26,7 @@ describe('REST API', () => {
   it('serves the overview and ingredient lists', async () => {
     const { app: a } = app();
     const o = await (await a.request(`${BASE}/api/overview`)).json();
-    expect(o.makeable_now).toContain('Moscow Mule');
+    expect(o.makeable_now.map((m: { name: string }) => m.name)).toContain('Moscow Mule');
     const list = await (await a.request(`${BASE}/api/ingredients?location=fridge`)).json();
     expect(list.map((i: { name: string }) => i.name)).toContain('Lillet Blanc');
   });

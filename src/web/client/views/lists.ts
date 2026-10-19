@@ -258,6 +258,77 @@ export function renderGear(): HTMLElement {
       ),
       glForm,
     ),
+    renderHousehold(),
+  );
+}
+
+/** Household items that stand in for missing bar tools (a spoon for the bar spoon ...). */
+function renderHousehold(): HTMLElement {
+  const d = t();
+  const current = (state.meta?.settings.household_substitutes ?? {}) as Record<string, string>;
+  const save = (next: Record<string, string>) =>
+    attempt(() => api.settings({ household_substitutes: next }));
+  const type = h('input', {
+    required: true,
+    list: 'eq-types',
+    placeholder: 'strainer',
+    'aria-label': d.gear.type,
+  });
+  const name = h('input', {
+    required: true,
+    placeholder: d.gear.householdPh,
+    'aria-label': d.gear.name,
+  });
+  const form = h(
+    'form',
+    { class: 'add-row add-row-2' },
+    type,
+    name,
+    h('button', { class: 'btn btn-primary', type: 'submit' }, d.shopping.add),
+  );
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (
+      await save({
+        ...current,
+        [type.value.trim().toLowerCase().replace(/\s+/g, '_')]: name.value.trim(),
+      })
+    )
+      form.reset();
+  });
+  return h(
+    'section',
+    { class: 'paper' },
+    h('h2', null, d.gear.household),
+    h('p', { class: 'muted' }, d.gear.householdHint),
+    h(
+      'ul',
+      { class: 'gear-list' },
+      Object.entries(current).map(([k, v]) =>
+        h(
+          'li',
+          null,
+          h(
+            'span',
+            { class: 'gear-name' },
+            v,
+            h('small', null, d.gear.replacesType(label(t().game.equipment, k))),
+          ),
+          h(
+            'button',
+            {
+              class: 'icon-btn',
+              type: 'button',
+              'aria-label': d.gear.remove,
+              onclick: () =>
+                save(Object.fromEntries(Object.entries(current).filter(([x]) => x !== k))),
+            },
+            '×',
+          ),
+        ),
+      ),
+    ),
+    form,
   );
 }
 
@@ -321,6 +392,36 @@ export function renderActivity(): HTMLElement {
   );
 }
 
+let exampleCount: number | null = null;
+
+function examplesButton(): HTMLElement | null {
+  const d = t();
+  if (exampleCount === null) {
+    void api.examples().then((r) => {
+      exampleCount = r.count;
+      if (r.count) document.querySelector('.examples-slot')?.replaceWith(examplesButton() ?? '');
+    });
+    return h('span', { class: 'examples-slot' });
+  }
+  if (!exampleCount) return null;
+  return h(
+    'button',
+    {
+      type: 'button',
+      class: 'btn btn-quiet',
+      onclick: async () => {
+        if (!confirm(d.backup.removeExamplesConfirm(exampleCount ?? 0))) return;
+        const r = await attempt(() => api.removeExamples());
+        if (r) {
+          exampleCount = 0;
+          toast(d.backup.examplesRemoved(r.result.total));
+        }
+      },
+    },
+    d.backup.removeExamples(exampleCount),
+  );
+}
+
 function renderBackup(): HTMLElement {
   const d = t();
   const file = h('input', {
@@ -360,6 +461,7 @@ function renderBackup(): HTMLElement {
       'div',
       { class: 'actions' },
       h('a', { class: 'btn', href: '/api/export', download: '' }, d.backup.export),
+      examplesButton(),
     ),
     h(
       'div',

@@ -94,8 +94,12 @@ const guide = (): RecipeWithCheck | undefined =>
 
 function hasEquipment(type: string): boolean {
   if (game.sandbox) return true;
-  return state.equipment.some(
-    (e) => e.available && (e.type === type || e.substitutes_for.includes(type)),
+  const household = (state.meta?.settings.household_substitutes ?? {}) as Record<string, string>;
+  return (
+    Boolean(household[type]) ||
+    state.equipment.some(
+      (e) => e.available && (e.type === type || e.substitutes_for.includes(type)),
+    )
   );
 }
 

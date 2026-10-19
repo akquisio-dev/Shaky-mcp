@@ -64,7 +64,9 @@ export const en = {
     subcategory: 'Kind',
     subcategoryHint: 'e.g. white rum, london dry gin, Monin',
     tags: 'Tags',
-    tagsHint: 'comma separated, e.g. lime juice, citrus',
+    tagsHint: 'comma separated, e.g. citrus, sour',
+    provides: 'Also provides',
+    providesHint: 'e.g. lime juice, lime zest, lime wedge',
     abv: 'ABV %',
     color: 'Liquid color',
     flavor: 'Flavor notes',
@@ -110,6 +112,7 @@ export const en = {
     missing: 'missing',
     unusable: 'empty or expired',
     toShopping: 'Add missing to shopping list',
+    servingsLeft: (n: number) => (n === 1 ? 'enough for 1 drink' : `enough for ${n} drinks`),
     none: 'No recipes match.',
     byAI: 'by AI',
     delete: 'Delete recipe',
@@ -147,6 +150,11 @@ export const en = {
     addIng: 'Ingredient',
     addStep: 'Step',
     draft: 'Draft steps from ingredients',
+    exact: 'exact',
+    exactHint:
+      'Only bottles without extra words, so tonic water does not take the wild berry tonic',
+    exclude: 'Not with',
+    excludePh: 'not: wild berry',
     up: 'Move up',
     down: 'Move down',
     glass: 'Glass',
@@ -176,6 +184,11 @@ export const en = {
     count: 'Count',
     replaces: 'Can replace (types, comma separated)',
     remove: 'Remove',
+    household: 'Household stand-ins',
+    householdHint:
+      'Everyday things that do the job when a bar tool is missing. Recipes count them as available.',
+    householdPh: 'e.g. spoon',
+    replacesType: (t: string) => `instead of a ${t}`,
   },
   activity: {
     empty: 'No changes yet.',
@@ -322,6 +335,10 @@ export const en = {
     confirmReplace: 'This deletes everything in your bar before importing. Continue?',
     imported: 'Backup imported.',
     badFile: 'That file is not valid JSON.',
+    removeExamples: (n: number) => `Remove example data (${n})`,
+    removeExamplesConfirm: (n: number) =>
+      `Remove ${n} example items? Things you added or changed stay.`,
+    examplesRemoved: (n: number) => `${n} example items removed.`,
   },
   common: {
     edit: 'Edit',

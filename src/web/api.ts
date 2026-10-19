@@ -1,7 +1,7 @@
 import { Hono, type Context } from 'hono';
 import { z, ZodError } from 'zod';
 import type { Db } from '../db/connection.js';
-import { getAllSettings, listActivity, listShopping, setSetting } from '../db/repos/misc.js';
+import { getAllSettings, listActivity, listShopping } from '../db/repos/misc.js';
 import { listMixLog } from '../db/repos/recipes.js';
 import {
   equipmentUpsertSchema,
@@ -15,7 +15,7 @@ import {
   setGlassware,
   setLocation,
 } from '../core/catalog.js';
-import { createCtx, mutate, ShakyError } from '../core/context.js';
+import { createCtx, ShakyError } from '../core/context.js';
 import {
   addIngredient,
   archiveIngredient,
@@ -28,6 +28,8 @@ import {
 } from '../core/inventory.js';
 import { logMix } from '../core/mixing.js';
 import { exportBar, importBar } from '../core/backup.js';
+import { updateSettings } from '../core/settings.js';
+import { countExampleData, removeExampleData } from '../core/examples.js';
 import {
   cancelTraining,
   getTraining,
@@ -74,16 +76,6 @@ async function body(c: Context): Promise<Record<string, unknown>> {
     return {};
   }
 }
-
-const settingsSchema = z
-  .object({
-    language: z.enum(['auto', 'en', 'de']),
-    units: z.enum(['cl', 'oz']),
-    web_autostart: z.boolean(),
-    expiry_warning_days: z.number().int().min(0).max(60),
-    theme: z.enum(['auto', 'light', 'dark']),
-  })
-  .partial();
 
 /** REST API. Every write goes through core/ with source "web". */
 export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
@@ -273,25 +265,13 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
     c.json(listActivity(db, { limit: Number(c.req.query('limit') ?? 50) })),
   );
   api.get('/settings', (c) => c.json(getAllSettings(db)));
-  api.patch('/settings', async (c) => {
-    const b = settingsSchema.parse(await body(c));
-    done(
-      mutate(ctx, (cs) => {
-        for (const [k, v] of Object.entries(b)) {
-          if (v === undefined) continue;
-          setSetting(db, k, v);
-          cs.record({
-            entity: 'settings',
-            entity_id: null,
-            action: 'updated',
-            summary: `Setting ${k} set to ${JSON.stringify(v)}.`,
-            data: { key: k, value: v },
-          });
-        }
-      }),
-    );
-    return c.json(getAllSettings(db));
-  });
+  api.patch('/settings', async (c) =>
+    c.json(done(updateSettings(ctx, (await body(c)) as never)).result),
+  );
+
+  // example data
+  api.get('/examples', (c) => c.json({ count: countExampleData(ctx) }));
+  api.delete('/examples', (c) => c.json(done(removeExampleData(ctx))));
 
   return api;
 }

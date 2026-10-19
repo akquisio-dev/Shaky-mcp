@@ -12,6 +12,8 @@ interface IngRow {
   unit: string;
   optional: boolean;
   garnish: boolean;
+  exact?: boolean;
+  exclude?: string[];
 }
 
 interface StepRow {
@@ -158,6 +160,28 @@ export function openRecipeForm(r?: RecipeWithCheck): void {
               onchange: (e: Event) => (row.garnish = (e.target as HTMLInputElement).checked),
             }),
             d.recipe.garnish,
+          ),
+          h(
+            'label',
+            { class: 'check small', title: d.form.exactHint },
+            h('input', {
+              type: 'checkbox',
+              checked: Boolean(row.exact),
+              onchange: (e: Event) =>
+                (row.exact = (e.target as HTMLInputElement).checked || undefined),
+            }),
+            d.form.exact,
+          ),
+          inp(
+            row.exclude?.join(', '),
+            (v) => {
+              const list = v
+                .split(',')
+                .map((x) => x.trim())
+                .filter(Boolean);
+              row.exclude = list.length ? list : undefined;
+            },
+            { placeholder: d.form.excludePh, 'aria-label': d.form.exclude, class: 'exclude' },
           ),
           h(
             'button',
@@ -382,5 +406,5 @@ export function openRecipeForm(r?: RecipeWithCheck): void {
       if (!stepBox.contains(document.activeElement)) drawSteps();
     }, 400);
   }
-  close = openDialog(r ? r.name : d.form.newRecipe, form, { wide: true });
+  close = openDialog(r ? r.name : d.form.newRecipe, form, { xwide: true });
 }

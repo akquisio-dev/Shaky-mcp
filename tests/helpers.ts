@@ -15,6 +15,6 @@ export function ctxFor(db: Db, source: Source = 'web', now = NOW): Ctx {
 
 export function seededCtx(source: Source = 'web'): Ctx {
   const db = freshDb();
-  seed(ctxFor(db, 'cli'), readSeedFile());
+  seed(ctxFor(db, 'cli'), readSeedFile(), { origin: 'example' });
   return ctxFor(db, source);
 }

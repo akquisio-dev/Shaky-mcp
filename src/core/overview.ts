@@ -15,6 +15,12 @@ export function warningsFor(items: IngredientView[]): Warning[] {
   const out: Warning[] = [];
   for (const i of items) {
     if (i.archived) continue;
+    const empty = i.fill_level === 'empty' || i.quantity <= 0;
+    // Empty things only warn that they are empty, not that they expire.
+    if (empty) {
+      out.push({ id: i.id, name: i.name, kind: 'empty', detail: 'empty' });
+      continue;
+    }
     if (i.expired)
       out.push({ id: i.id, name: i.name, kind: 'expired', detail: `expired on ${i.expires_on}` });
     else if (i.expiring_soon)
@@ -25,9 +31,7 @@ export function warningsFor(items: IngredientView[]): Warning[] {
         detail:
           i.days_left === 0 ? 'use today' : `use within ${i.days_left} day(s), by ${i.expires_on}`,
       });
-    if (i.fill_level === 'empty' || i.quantity <= 0)
-      out.push({ id: i.id, name: i.name, kind: 'empty', detail: 'empty' });
-    else if (i.low)
+    if (i.low)
       out.push({ id: i.id, name: i.name, kind: 'low', detail: i.fill_level.replace('_', ' ') });
   }
   return out;
@@ -73,7 +77,10 @@ export function barOverview(ctx: Ctx) {
     equipment_unavailable: equipment.filter((e) => !e.available).map((e) => e.name),
     glassware: listGlassware(ctx.db).map((g) => ({ name: g.name, type: g.type, count: g.count })),
     locations: listLocations(ctx.db).map((l) => l.key),
-    makeable_now: makeable.makeable.map((c) => c.name),
+    makeable_now: makeable.makeable.map((c) => ({
+      name: c.name,
+      servings_possible: c.servings_possible,
+    })),
     missing_one: makeable.missing_one.map((c) => ({ name: c.name, missing: c.missing[0] })),
   };
 }
@@ -97,7 +104,9 @@ export function overviewText(o: BarOverview): string {
   }
   lines.push(`Equipment: ${o.equipment.map((e) => e.name).join(', ') || 'none'}`);
   lines.push(`Glasses: ${o.glassware.map((g) => `${g.count}x ${g.name}`).join(', ') || 'none'}`);
-  lines.push(`Saved recipes makeable now: ${o.makeable_now.join(', ') || 'none'}`);
+  lines.push(
+    `Saved recipes makeable now: ${o.makeable_now.map((m) => (m.servings_possible !== null ? `${m.name} (${m.servings_possible}x)` : m.name)).join(', ') || 'none'}`,
+  );
   if (o.missing_one.length) {
     lines.push(
       `Missing one ingredient: ${o.missing_one.map((m) => `${m.name} (needs ${m.missing})`).join(', ')}`,

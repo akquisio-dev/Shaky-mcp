@@ -9,6 +9,8 @@ export interface Ingredient {
   category: string;
   subcategory: string | null;
   tags: string[];
+  provides: string[];
+  origin: string | null;
   abv: number | null;
   color: string | null;
   flavor_notes: string | null;
@@ -28,8 +30,9 @@ export interface Ingredient {
   updated_at: string;
 }
 
-type Row = Omit<Ingredient, 'tags' | 'archived' | 'amount_is_estimate'> & {
+type Row = Omit<Ingredient, 'tags' | 'provides' | 'archived' | 'amount_is_estimate'> & {
   tags: string;
+  provides: string;
   archived: number;
   amount_is_estimate: number;
 };
@@ -38,6 +41,7 @@ function map(r: Row): Ingredient {
   return {
     ...r,
     tags: parseJson<string[]>(r.tags, []),
+    provides: parseJson<string[]>(r.provides, []),
     archived: r.archived === 1,
     amount_is_estimate: r.amount_is_estimate === 1,
   };

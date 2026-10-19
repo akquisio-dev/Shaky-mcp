@@ -15,8 +15,11 @@ import {
   setLocation,
 } from '../core/catalog.js';
 import { ShakyError, type Change, type Ctx } from '../core/context.js';
+import { countExampleData, removeExampleData } from '../core/examples.js';
+import { getAllSettings, settingsSchema, updateSettings } from '../core/settings.js';
 import {
   addIngredient,
+  addIngredients,
   archiveIngredient,
   getExpiring,
   getIngredientView,
@@ -31,6 +34,8 @@ import { barOverview, overviewText } from '../core/overview.js';
 import {
   deleteRecipe,
   findMakeable,
+  patchRecipe,
+  recipePatchSchema,
   getRecipeWithCheck,
   listRecipesWithCheck,
   saveRecipe,
@@ -221,6 +226,26 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
       return changed(`Added ${result.name} (id ${result.id}).`, changes, {
         ingredient: brief(result),
       });
+    },
+  );
+
+  reg(
+    'add_ingredients',
+    {
+      title: 'Add several ingredients',
+      description:
+        'Add up to 100 ingredients in one call, same fields as add_ingredient. All or nothing: if one item is invalid, nothing is added and the error names the item. Use this when stocking a bar.',
+      input: { items: z.array(z.object(ingredientInputSchema.shape)).min(1).max(100) },
+    },
+    (a) => {
+      const { result, changes } = addIngredients(ctx, a.items);
+      return changed(
+        `Added ${result.length} ingredient(s).`,
+        changes.filter((c) => c.entity === 'location'),
+        {
+          added: result.map((i) => ({ id: i.id, name: i.name, location: i.location })),
+        },
+      );
     },
   );
 
@@ -497,6 +522,32 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
   );
 
   reg(
+    'update_recipe',
+    {
+      title: 'Change part of a recipe',
+      description:
+        'Change a saved recipe without resending all of it: plain fields (name, tags, glass, method, notes, rating, favorite ...), update_lines [{name, set: {...}}] to change single ingredient lines (amount, unit, subcategory, exact, exclude ...), add_lines, remove_lines (by name) and steps (replaces all steps). The result is validated like save_recipe.',
+      input: { recipe: recipeRef, ...recipePatchSchema.shape },
+    },
+    (a) => {
+      const { recipe, ...patch } = a;
+      const { result, changes } = patchRecipe(ctx, recipe, patch);
+      return changed(
+        `Updated ${result.name}, ${result.availability.status.replace('_', ' ')}.`,
+        changes,
+        {
+          recipe: {
+            id: result.id,
+            name: result.name,
+            ingredients: result.ingredients,
+            availability: result.availability,
+          },
+        },
+      );
+    },
+  );
+
+  reg(
     'delete_recipe',
     {
       title: 'Delete recipe',
@@ -515,7 +566,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     {
       title: 'What can I make?',
       description:
-        'Saved recipes that can be made right now with what is in stock, plus those missing exactly one required ingredient (great for shopping suggestions). Matching is fuzzy over category, subcategory and tags; empty and expired items do not count. Equipment gaps are reported but do not block. For drinks not saved yet, use get_bar_overview and your own knowledge.',
+        'Saved recipes that can be made right now with what is in stock (with servings_possible: how many times the stock allows, each recipe counted on its own), plus those missing exactly one required ingredient (great for shopping suggestions). Matching is fuzzy over category, subcategory and tags; empty and expired items do not count. Equipment gaps are reported but do not block. For drinks not saved yet, use get_bar_overview and your own knowledge.',
       input: {
         tag: z.string().optional().describe('Only recipes with this tag, e.g. tiki, longdrink.'),
         include_missing_more: z.boolean().optional(),
@@ -531,9 +582,11 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
         ...(c.missing_optional.length && { missing_optional: c.missing_optional }),
         ...(c.missing_equipment.length && { missing_equipment: c.missing_equipment }),
         ...(c.substitutes_used.length && { substitutes_used: c.substitutes_used }),
+        ...(c.status === 'makeable' &&
+          c.servings_possible !== null && { servings_possible: c.servings_possible }),
       });
       return ok(
-        `Makeable: ${r.makeable.map((c) => c.name).join(', ') || 'none'}. Missing one: ${
+        `Makeable: ${r.makeable.map((c) => (c.servings_possible !== null ? `${c.name} (${c.servings_possible}x)` : c.name)).join(', ') || 'none'}. Missing one: ${
           r.missing_one.map((c) => `${c.name} (${c.missing[0]})`).join(', ') || 'none'
         }.`,
         {
@@ -631,6 +684,47 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
       return changed(changes.map((c) => c.summary).join(' ') || 'Nothing changed.', changes, {
         ...result,
       });
+    },
+  );
+
+  // ---------- setup ----------
+
+  reg(
+    'remove_example_data',
+    {
+      title: 'Remove example data',
+      description:
+        'Removes the example bar loaded with "shaky seed" (bottles, recipes, equipment, glasses, shopping items). Anything the user added or changed stays. Call with confirm: false first to see how many items would go.',
+      input: { confirm: z.boolean().default(false) },
+      destructive: true,
+    },
+    (a) => {
+      if (!a.confirm) {
+        const n = countExampleData(ctx);
+        return ok(`${n} example item(s) would be removed. Call again with confirm: true.`, {
+          count: n,
+        });
+      }
+      const { result, changes } = removeExampleData(ctx);
+      return changed(`Removed ${result.total} example item(s).`, changes, {
+        removed: result.removed,
+      });
+    },
+  );
+
+  reg(
+    'update_settings',
+    {
+      title: 'Settings',
+      description:
+        'Read or change settings: language, units (cl/oz), theme, expiry_warning_days, web_autostart and household_substitutes (household items that stand in for missing bar tools, e.g. {"bar_spoon": "spoon"}). Without arguments returns the current settings.',
+      input: settingsSchema.shape,
+    },
+    (a) => {
+      if (!Object.values(a).some((v) => v !== undefined))
+        return ok('Current settings.', { settings: getAllSettings(ctx.db) });
+      const { result, changes } = updateSettings(ctx, a);
+      return changed('Settings saved.', changes, { settings: result });
     },
   );
 

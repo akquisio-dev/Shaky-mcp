@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { listEquipment } from '../db/repos/catalog.js';
 import {
   deleteRecipe as deleteRow,
@@ -10,7 +11,8 @@ import {
 } from '../db/repos/recipes.js';
 import { mutate, nowIso, ShakyError, type Ctx } from './context.js';
 import { listIngredientViews } from './inventory.js';
-import { checkRecipe, type RecipeCheck } from './matching.js';
+import { checkRecipe, type Household, type RecipeCheck } from './matching.js';
+import { getSetting } from '../db/repos/misc.js';
 import { recipeInputSchema, type RecipeInput } from './schemas.js';
 
 export function resolveRecipe(ctx: Ctx, ref: number | string): Recipe {
@@ -45,7 +47,8 @@ export interface RecipeWithCheck extends Recipe {
 function checker(ctx: Ctx) {
   const stock = listIngredientViews(ctx, { include_empty: true });
   const equipment = listEquipment(ctx.db);
-  return (r: Recipe) => checkRecipe(r, stock, equipment);
+  const household = getSetting<Household>(ctx.db, 'household_substitutes', {});
+  return (r: Recipe) => checkRecipe(r, stock, equipment, household);
 }
 
 export function listRecipesWithCheck(ctx: Ctx, f: RecipeFilter = {}): RecipeWithCheck[] {
@@ -161,4 +164,75 @@ export function deleteRecipe(ctx: Ctx, ref: number | string) {
     });
     return { id: r.id, name: r.name };
   });
+}
+
+export const recipePatchSchema = z.object({
+  name: z.string().trim().min(1).max(80).optional(),
+  description: z.string().trim().max(1000).nullish(),
+  tags: z.array(z.string()).max(30).optional(),
+  glass: z.string().nullish(),
+  method: z.string().nullish(),
+  color: z.string().nullish(),
+  notes: z.string().max(2000).nullish(),
+  favorite: z.boolean().optional(),
+  rating: z.number().int().min(1).max(5).nullish(),
+  update_lines: z
+    .array(
+      z.object({
+        name: z.string().describe('Current name of the ingredient line.'),
+        set: z
+          .record(z.string(), z.unknown())
+          .describe(
+            'Fields to change on that line, e.g. {"amount": 2} or {"exclude": ["wild berry"]}.',
+          ),
+      }),
+    )
+    .optional(),
+  add_lines: z.array(z.record(z.string(), z.unknown())).optional(),
+  remove_lines: z.array(z.string()).optional(),
+  steps: z.array(z.record(z.string(), z.unknown())).optional().describe('Replaces all steps.'),
+});
+
+/** Changes parts of a recipe without resending all of it. */
+export function patchRecipe(
+  ctx: Ctx,
+  ref: number | string,
+  input: z.input<typeof recipePatchSchema>,
+) {
+  const p = recipePatchSchema.parse(input);
+  const cur = resolveRecipe(ctx, ref);
+  let lines: Record<string, unknown>[] = cur.ingredients.map((l) => ({ ...l }));
+  const find = (name: string) => {
+    const i = lines.findIndex((l) => String(l.name).toLowerCase() === name.trim().toLowerCase());
+    if (i < 0)
+      throw new ShakyError(
+        'not_found',
+        `${cur.name} has no ingredient line "${name}". Lines: ${lines.map((l) => l.name).join(', ')}.`,
+      );
+    return i;
+  };
+  for (const u of p.update_lines ?? []) {
+    const i = find(u.name);
+    lines[i] = { ...lines[i], ...u.set };
+  }
+  for (const name of p.remove_lines ?? []) lines.splice(find(name), 1);
+  lines = [...lines, ...(p.add_lines ?? [])];
+  const { update_lines: _u, add_lines: _a, remove_lines: _r, steps, ...fields } = p;
+  const merged = {
+    name: cur.name,
+    description: cur.description,
+    tags: cur.tags,
+    glass: cur.glass,
+    method: cur.method,
+    source: cur.source,
+    favorite: cur.favorite,
+    rating: cur.rating,
+    notes: cur.notes,
+    color: cur.color,
+    ...Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined)),
+    ingredients: lines,
+    steps: steps ?? cur.steps,
+    id: cur.id,
+  };
+  return saveRecipe(ctx, merged as RecipeInput & { id: number });
 }

@@ -10,6 +10,7 @@ import { loadConfig, type Config } from './config.js';
 import { createCtx } from './core/context.js';
 import { readSeedFile, seed } from './core/seed.js';
 import { exportBar, importBar } from './core/backup.js';
+import { removeExampleData } from './core/examples.js';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { openDb } from './db/connection.js';
 import { getSetting } from './db/repos/misc.js';
@@ -25,7 +26,8 @@ Commands:
   serve     Web UI + REST API + MCP over Streamable HTTP at /mcp
   mcp       MCP over stdio (what Claude Desktop runs). Also starts the web UI
             when the port is free, unless --no-web or SHAKY_WEB_AUTOSTART=false
-  seed      Load the example bar from examples/seed.json (--reset wipes first)
+  seed      Load the example bar from examples/seed.json (--reset wipes first,
+            --remove takes the example data out again)
   export    Write the whole bar as JSON to a file (or stdout without a path)
   import    Load a JSON export: merge by name, or --replace to wipe first
   doctor    Check the setup and print a Claude Desktop config snippet
@@ -55,6 +57,7 @@ function parse(argv: string[]) {
       'data-dir': { type: 'string' },
       'no-web': { type: 'boolean' },
       reset: { type: 'boolean' },
+      remove: { type: 'boolean' },
       replace: { type: 'boolean' },
       file: { type: 'string' },
       help: { type: 'boolean', short: 'h' },
@@ -152,8 +155,19 @@ async function cmdMcp(cfg: Config) {
 
 function cmdSeed(cfg: Config, values: ReturnType<typeof parse>['values']) {
   const db = openDb(cfg.dbFile);
+  if (values.remove) {
+    const { result } = removeExampleData(createCtx(db, 'cli'));
+    db.close();
+    console.log(
+      `Removed ${result.total} example item(s) from ${cfg.dbFile}. Your own items were kept.`,
+    );
+    return;
+  }
   const file = values.file ? readSeedFile(values.file) : readSeedFile();
-  const { result } = seed(createCtx(db, 'cli'), file, { reset: values.reset });
+  const { result } = seed(createCtx(db, 'cli'), file, {
+    reset: values.reset,
+    origin: values.file ? undefined : 'example',
+  });
   db.close();
   console.log(
     `${values.reset ? 'Reset and loaded' : 'Loaded'} into ${cfg.dbFile}: ${Object.entries(result)

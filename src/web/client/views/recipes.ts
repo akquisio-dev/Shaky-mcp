@@ -44,7 +44,14 @@ function card(r: RecipeWithCheck, rerender: () => void): HTMLElement {
     h(
       'span',
       { class: 'recipe-side' },
-      h('span', { class: `sticker sticker-${st}` }, label(d.recipe.status, st)),
+      h(
+        'span',
+        { class: `sticker sticker-${st}` },
+        label(d.recipe.status, st),
+        st === 'makeable' && r.availability.servings_possible !== null
+          ? ` ${r.availability.servings_possible}×`
+          : '',
+      ),
       r.availability.missing.length
         ? h('span', { class: 'missing' }, r.availability.missing.join(', '))
         : null,
@@ -233,7 +240,15 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
             .filter(Boolean)
             .join(', '),
         ),
-        h('span', { class: `sticker sticker-${a.status}` }, label(d.recipe.status, a.status)),
+        h(
+          'span',
+          { class: `sticker sticker-${a.status}` },
+          label(d.recipe.status, a.status),
+          a.status === 'makeable' && a.servings_possible !== null ? ` ${a.servings_possible}×` : '',
+        ),
+        a.status === 'makeable' && a.servings_possible !== null
+          ? h('span', { class: 'muted small-note' }, d.recipe.servingsLeft(a.servings_possible))
+          : null,
         h(
           'button',
           {

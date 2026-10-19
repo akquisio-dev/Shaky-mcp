@@ -72,7 +72,7 @@ describe('MCP server', () => {
     const r = await call('get_bar_overview');
     expect(r.isError).toBeFalsy();
     expect(r.data.in_stock.spirit.map((i: { name: string }) => i.name)).toContain('Tequila Blanco');
-    expect(r.data.makeable_now).toContain('Moscow Mule');
+    expect(r.data.makeable_now.map((m: { name: string }) => m.name)).toContain('Moscow Mule');
     expect(r.text).toContain('Lillet Blanc');
   });
 
@@ -167,5 +167,65 @@ describe('MCP server', () => {
     expect((inv.contents[0] as { text: string }).text).toContain('Cointreau');
     const p = await client.getPrompt({ name: 'suggest_drink', arguments: { mood: 'beach' } });
     expect(JSON.stringify(p.messages)).toContain('beach');
+  });
+});
+
+describe('MCP setup tools (v1.1)', () => {
+  it('adds many ingredients at once, all or nothing', async () => {
+    const ok = await call('add_ingredients', {
+      items: [
+        { name: 'Red Bull', category: 'mixer', subcategory: 'energy drink' },
+        {
+          name: 'Lemons',
+          category: 'fruit',
+          provides: ['lemon juice', 'lemon zest'],
+          quantity: 3,
+          yield_ml: 35,
+        },
+      ],
+    });
+    expect(ok.data.added).toHaveLength(2);
+    const bad = await call('add_ingredients', {
+      items: [
+        { name: 'Okay', category: 'mixer' },
+        { name: '', category: 'x' },
+      ],
+    });
+    expect(bad.isError).toBe(true);
+    expect(bad.text).toContain('items[1].name');
+    const list = await call('list_ingredients', { search: 'Okay' });
+    expect(list.data.count).toBe(0);
+  });
+
+  it('patches one recipe line without resending the recipe', async () => {
+    const r = await call('update_recipe', {
+      recipe: 'Gin & Tonic',
+      update_lines: [{ name: 'Tonic water', set: { exclude: ['wild berry'], amount: 12 } }],
+      tags: ['longdrink', 'classic'],
+    });
+    expect(r.isError).toBeFalsy();
+    const line = r.data.recipe.ingredients.find((l: { name: string }) => l.name === 'Tonic water');
+    expect(line).toMatchObject({ amount: 12, exclude: ['wild berry'], unit: 'cl' });
+    const missing = await call('update_recipe', { recipe: 'Gin & Tonic', remove_lines: ['Olive'] });
+    expect(missing.text).toContain('has no ingredient line "Olive"');
+  });
+
+  it('removes the example data but keeps own items', async () => {
+    await call('add_ingredient', { name: 'My Mezcal', category: 'spirit' });
+    const preview = await call('remove_example_data', {});
+    expect(preview.data.count).toBeGreaterThan(30);
+    const done = await call('remove_example_data', { confirm: true });
+    expect(done.data.removed.recipes).toBe(12);
+    const left = await call('list_ingredients', { include_empty: true });
+    expect(left.data.items.map((i: { name: string }) => i.name)).toEqual(['My Mezcal']);
+  });
+
+  it('reads and changes settings, including household substitutes', async () => {
+    const cur = await call('update_settings', {});
+    expect(cur.data.settings.household_substitutes).toEqual({ bar_spoon: 'spoon' });
+    const set = await call('update_settings', {
+      household_substitutes: { bar_spoon: 'spoon', strainer: 'fork' },
+    });
+    expect(set.data.settings.household_substitutes.strainer).toBe('fork');
   });
 });

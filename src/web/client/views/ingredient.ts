@@ -255,6 +255,14 @@ export function openIngredientForm(i?: IngredientView): void {
       h('input', { name: 'expires_at', type: 'date', value: i?.expires_at?.slice(0, 10) ?? '' }),
     ),
     field(
+      d.ing.provides,
+      h('input', {
+        name: 'provides',
+        value: i?.provides.join(', ') ?? '',
+        placeholder: d.ing.providesHint,
+      }),
+    ),
+    field(
       d.ing.tags,
       h('input', { name: 'tags', value: i?.tags.join(', ') ?? '', placeholder: d.ing.tagsHint }),
     ),
@@ -302,6 +310,10 @@ export function openIngredientForm(i?: IngredientView): void {
       shelf_life_days: num(f.get('shelf_life_days')),
       expires_at: str(f.get('expires_at')),
       tags: String(f.get('tags') ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      provides: String(f.get('provides') ?? '')
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
