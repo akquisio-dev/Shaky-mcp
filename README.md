@@ -15,15 +15,20 @@ Next to the MCP server runs a playful web UI on `localhost`: your bar as a comic
 **For the AI (MCP)**
 
 - **A bar inventory that stays true**: fill levels (full, three quarters, half, quarter, almost empty, empty) or exact ml, bottle counts, opened date and shelf life with editable defaults per category (an open vermouth or Lillet keeps about five weeks in the fridge, fresh juice a few days, spirits practically forever).
-- **Fuzzy recipe matching**: "rum" matches any rum, "dark rum" never matches your white rum. Empty and expired bottles do not count. Find what you can make now and what misses just one ingredient.
+- **Fuzzy recipe matching**: "rum" matches any rum, "dark rum" never matches your white rum. Empty and expired bottles do not count. Find what you can make now (and how many times your stock allows it) and what misses just one ingredient. Items can say what they provide (limes: lime juice, zest, wedge), recipe lines can be `exact` or `exclude` words, so tonic water never takes the wild berry tonic.
+- **Your taste**: "0.5 cl less lemon juice in sours", "no tequila". Recipes stay as saved; Shaky shows, deducts and scores your version and leaves avoided drinks out of suggestions.
+- **Strength per drink**: ABV including melt water, standard drinks, and a warning for energy drink mixes.
+- **Homemade syrups**: make simple syrup 1:1, rich syrup 2:1 or honey syrup from the sugar or honey in stock; the new bottle's shelf life starts today.
+- **Batch calculator**: scale a drink to N glasses, respect a slush machine's minimum and maximum fill, and get a warning with a top-up amount when the batch is too strong to freeze.
 - **Log a drink, deduct the stock**: exact for bottles with ml, estimated from the fill level otherwise, limes via juice per piece. When a bottle runs out and you have a spare, the next one is opened.
 - **Trainings**: the AI loads a recipe into the mixing game, you mix it, the server scores amounts, order, technique and garnish, and the AI reads the result to coach you.
-- **Data driven**: equipment (with substitutes like "a jam jar can replace a shaker"), glasses, storage locations and category defaults are data the AI can change through tools. No code changes needed.
+- **Data driven**: equipment (with substitutes like "a jam jar can replace a shaker" and household stand-ins like a spoon for the bar spoon), glasses, storage locations and category defaults are data the AI can change through tools. No code changes needed.
+- **Set up fast**: `add_ingredients` stocks a whole bar in one call, `update_recipe` changes single lines, `remove_example_data` clears the example bar.
 - **Every change is logged** with its source: you in the web UI, the AI over MCP, or the command line.
 
 **For you (web UI on localhost)**
 
-- **Bar**: shelf, fridge, freezer and pantry as a scene; every bottle drawn with its liquid at the real fill level, badges for "open 45 d", "use in 5 d" and "almost empty". Add and edit anything, including your own categories and places.
+- **Bar**: shelf, fridge, freezer and pantry as a scene. Every item has a container separate from its liquid: square, flat or bulbous bottles, syrup bottles with pourer, dropper bottles, cans in three sizes (counted and open or closed, no fill level), tetra paks, PET bottles, freezer bags, jars and packs, fruit drawn piece by piece. Variants (Red Bull Original / Sugarfree) live under one entry. Badges for "open 45 d", "use in 5 d", best before and "almost empty".
 - **Mix (the game)**: drag bottles onto a glass, shaker, blender or mixing glass and hold to pour with a live cl counter; ice from the freezer, squeeze limes, shake with a shake meter, blend, stir, muddle, strain and garnish, and watch the glass fill in layers of the real colors. Only what you own shows up, unless you switch on the sandbox. Follow a recipe and get a score when you serve.
 - **Mix for real**: one big step at a time for the kitchen counter, with servings, timers and a screen that stays awake; at the end the drink is logged and the stock updated.
 - **Recipes** with filters and an editor for ingredients and structured steps, **shopping list**, **equipment and glasses**, **history** of every change, **backup** export and import.
@@ -134,14 +139,16 @@ Then ask Claude something like _"What can I mix tonight, something fruity?"_, _"
 
 **Tools**
 
-| Area        | Tools                                                                                                                              |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Overview    | `get_bar_overview` (call first), `get_expiring`, `get_recent_activity`                                                             |
-| Ingredients | `list_ingredients`, `get_ingredient`, `add_ingredient`, `update_ingredient`, `archive_ingredient`, `set_fill_level`, `mark_opened` |
-| Bar setup   | `list_equipment`, `set_equipment`, `list_glassware`, `set_glassware`, `set_location`, `set_category_defaults`                      |
-| Recipes     | `list_recipes`, `get_recipe`, `save_recipe`, `delete_recipe`, `find_makeable_recipes`, `log_mix`                                   |
-| Shopping    | `shopping_list_get`, `shopping_list_add`, `shopping_list_update`                                                                   |
-| Training    | `start_training`, `get_training_result`, `cancel_training`                                                                         |
+| Area        | Tools                                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview    | `get_bar_overview` (call first), `get_expiring`, `get_recent_activity`                                                                                  |
+| Ingredients | `list_ingredients`, `get_ingredient`, `add_ingredient`, `add_ingredients`, `update_ingredient`, `archive_ingredient`, `set_fill_level`, `mark_opened`   |
+| Bar setup   | `list_equipment`, `set_equipment`, `list_glassware`, `set_glassware`, `set_location`, `set_category_defaults`, `update_settings`, `remove_example_data` |
+| Recipes     | `list_recipes`, `get_recipe`, `save_recipe`, `update_recipe`, `delete_recipe`, `find_makeable_recipes`, `log_mix`, `batch_calculator`                   |
+| Taste       | `list_preferences`, `add_preference`, `remove_preference`                                                                                               |
+| Homemade    | `list_preparations`, `make_preparation`, `save_preparation`                                                                                             |
+| Shopping    | `shopping_list_get`, `shopping_list_add`, `shopping_list_update`                                                                                        |
+| Training    | `start_training`, `get_training_result`, `cancel_training`                                                                                              |
 
 **Resources**: `shaky://bar/overview`, `shaky://inventory`, `shaky://equipment`.
 

@@ -40,6 +40,12 @@ Game rules (`src/game`): actions record quantities, never timestamps (`POUR_ML_P
 
 Web shell: header, main and footer are permanent nodes; `render()` swaps contents. The game scene is mounted once and never rebuilt during a gesture (`busy` flag), so live updates cannot break a pour.
 
+Matching extras: `provides` on an ingredient (or a tag that is exactly the asked phrase) beats the recipe line's category; lines can be `exact` or `exclude` words; `servings_possible` uses `stock_ml` (ml across bottles, or `yield_ml` x pieces). Household stand-ins (setting `household_substitutes`) count as equipment.
+
+Personal taste (`core/preferences.ts`): `personalize()` returns the user's version of a recipe; it is what `RecipeWithCheck.availability`, `log_mix`, the game and trainings use. Saved recipes are never rewritten. Strength in `core/strength.ts`, preparations in `core/prep.ts`, batches in `core/batch.ts`.
+
+Containers: `container` + `label_color` per ingredient, category default in `category_defaults.container`. `can` and `fruit` are counted (`counted` in the view): quantity and opened, no fill level. The plain list lives in `core/containers.ts` so the browser bundle does not pull in zod.
+
 ## Commands
 
 ```bash
