@@ -22,7 +22,7 @@ Next to the MCP server runs a playful web UI on `localhost`, where you see and m
 ## Requirements
 
 - Node.js **22.12 or newer** (24 LTS recommended)
-- Windows, macOS or Linux. No database server, no Docker. SQLite ships with the package as a prebuilt binary for all three systems.
+- Windows, macOS or Linux. No database server, no Docker, no C++ compiler. SQLite ships with the package as a prebuilt binary for all three systems (the repo's `.npmrc` turns off install scripts so npm never tries to compile it).
 
 ## Installation
 

@@ -11,6 +11,7 @@ Local AI bartender: an MCP server that reliably knows what is in the user's home
 - No em dashes or spaced en dashes in visible text (owner preference). Use commas, colons or " | ".
 - Never edit an applied migration in `src/db/migrations/`; add `00N_name.sql`.
 - In `shaky mcp` stdout is the protocol: log to stderr only.
+- `.npmrc` sets `ignore-scripts=true`: npm 10 would otherwise compile better-sqlite3 with node-gyp (fails on Windows without build tools) although prebuilds ship in the package. A new dependency that truly needs an install script must be discussed first.
 
 ## Architecture
 
