@@ -117,7 +117,7 @@ async function cmdServe(cfg: Config) {
 
 async function cmdMcp(cfg: Config) {
   const db = openDb(cfg.dbFile);
-  const server = createMcpServer(db);
+  const server = createMcpServer(db, { webUrl: `http://localhost:${cfg.port}` });
   const transport = new StdioServerTransport();
   let web: RunningWebServer | undefined;
 

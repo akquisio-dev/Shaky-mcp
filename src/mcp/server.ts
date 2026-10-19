@@ -12,18 +12,24 @@ const INSTRUCTIONS = `Shaky knows what is in the user's home bar right now.
 Start with get_bar_overview, then suggest drinks from your own recipe knowledge using only what is in stock (empty and expired items are not usable).
 Prefer ingredients that expire soon. Offer substitutes when one ingredient is missing, and put missing items on the shopping list when the user agrees.
 When the user says they used, finished, bought or opened something, update the bar (set_fill_level, mark_opened, update_ingredient, log_mix) and tell them what changed.
+To teach mixing, start_training loads a recipe into the web game; read the score with get_training_result once the user hands it in.
 Equipment, glasses, storage locations and shelf-life defaults are data: adapt them with set_equipment, set_glassware, set_location and set_category_defaults.
 Shaky is for adults of legal drinking age. Encourage responsible drinking and offer alcohol-free options when asked.`;
 
 /** Builds a fresh MCP server. One instance per transport/session. */
-export function createMcpServer(db: Db): McpServer {
+export interface McpServerOptions {
+  /** Where the web UI runs, so tools can point the user there. */
+  webUrl?: string;
+}
+
+export function createMcpServer(db: Db, opts: McpServerOptions = {}): McpServer {
   const ctx = createCtx(db, 'mcp');
   const server = new McpServer(
     { name: 'shaky', title: 'Shaky, your AI bartender', version: VERSION },
     { instructions: INSTRUCTIONS, capabilities: { logging: {} } },
   );
 
-  registerTools(server, ctx);
+  registerTools(server, ctx, opts.webUrl ?? 'http://localhost:8787');
 
   const json = (uri: URL, data: unknown) => ({
     contents: [

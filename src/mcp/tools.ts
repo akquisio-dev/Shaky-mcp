@@ -47,6 +47,13 @@ import {
   UNITS,
 } from '../core/schemas.js';
 import { addShopping, updateShoppingItem } from '../core/shopping.js';
+import {
+  cancelTraining,
+  describeTraining,
+  getTraining,
+  listTrainings,
+  startTraining,
+} from '../core/training.js';
 
 // Thin MCP wrapper around core/. Every tool returns a short human-readable
 // line plus compact JSON; mutating tools always list what they changed.
@@ -108,7 +115,7 @@ export function brief(i: IngredientView) {
   };
 }
 
-export function registerTools(server: McpServer, ctx: Ctx): void {
+export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://localhost:8787'): void {
   const reg = <S extends z.ZodRawShape>(
     name: string,
     config: {
@@ -623,6 +630,72 @@ export function registerTools(server: McpServer, ctx: Ctx): void {
       const { result, changes } = updateShoppingItem(ctx, id, rest);
       return changed(changes.map((c) => c.summary).join(' ') || 'Nothing changed.', changes, {
         ...result,
+      });
+    },
+  );
+
+  // ---------- training ----------
+
+  reg(
+    'start_training',
+    {
+      title: 'Start a mixing training',
+      description: `Load a saved recipe as an exercise into the mixing game of the web UI (${webUrl}/#/mix). If the page is open it pops up immediately, otherwise when the user opens it. The user mixes in the game; the server scores amounts, order, technique and garnish. Afterwards call get_training_result. Set show_steps false for an exam from memory, sandbox true to allow ingredients the user does not own. Starting a new training cancels an unfinished one.`,
+      input: {
+        recipe: recipeRef,
+        note: z
+          .string()
+          .max(300)
+          .optional()
+          .describe('A short tip shown with the exercise, e.g. "Watch the lime amount".'),
+        show_steps: z.boolean().optional(),
+        sandbox: z.boolean().optional(),
+      },
+    },
+    (a) => {
+      const { result, changes } = startTraining(ctx, a);
+      return changed(
+        `Training ${result.id} for ${result.recipe_name} is waiting. Ask the user to open ${webUrl}/#/mix (Mix tab), mix it and hand it in, then call get_training_result.`,
+        changes,
+        { training: describeTraining(result), open: `${webUrl}/#/mix` },
+      );
+    },
+  );
+
+  reg(
+    'get_training_result',
+    {
+      title: 'Training result',
+      description:
+        'Status and score of a training (the latest one if no id is given). While the status is pending or active the user has not handed it in yet: do not guess a score. When done: score 0 to 100, stars, poured vs expected amounts per ingredient and feedback lines to coach the user.',
+      input: { id: z.number().int().positive().optional() },
+      readOnly: true,
+    },
+    (a) => {
+      const t = a.id ? getTraining(ctx, a.id) : listTrainings(ctx, { limit: 1 })[0];
+      if (!t) return ok('No training has been started yet.', { training: null });
+      const d = describeTraining(t);
+      const text =
+        t.status === 'done'
+          ? `${t.recipe_name}: ${d.score}/100, ${d.stars} star(s). ${(d.feedback ?? []).join(' ')}`
+          : t.status === 'cancelled'
+            ? `The ${t.recipe_name} training was cancelled.`
+            : `The ${t.recipe_name} training is ${t.status}; the user has not handed it in yet.`;
+      return ok(text, { training: d });
+    },
+  );
+
+  reg(
+    'cancel_training',
+    {
+      title: 'Cancel training',
+      description: 'Cancel an unfinished training.',
+      input: { id: z.number().int().positive() },
+    },
+    (a) => {
+      const { result, changes } = cancelTraining(ctx, a.id);
+      return changed(`Training ${result.id} is ${result.status}.`, changes, {
+        training: describeTraining(result),
       });
     },
   );

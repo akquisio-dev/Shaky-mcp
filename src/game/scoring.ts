@@ -31,7 +31,7 @@ export interface ScoreResult {
 }
 
 /** Which recipe line a poured source stands for. Defaults to the source's own line name. */
-export type LineResolver = (source: Source) => string | undefined;
+export type LineResolver = (source: Source, purpose: 'pour' | 'garnish') => string | undefined;
 
 const TECHNIQUES = ['shake', 'stir', 'blend', 'muddle'] as const;
 
@@ -52,7 +52,7 @@ function tokens(actions: Action[], resolve: LineResolver): string[] {
     switch (a.type) {
       case 'pour':
       case 'add':
-        out.push(`pour:${resolve(a.source) ?? '?'}`);
+        out.push(`pour:${resolve(a.source, 'pour') ?? '?'}`);
         break;
       case 'add_ice':
         out.push('ice');
@@ -88,7 +88,7 @@ export function scoreMix(
   const extras = new Set<string>();
   for (const a of actions) {
     if (a.type !== 'pour' && a.type !== 'add') continue;
-    const line = resolve(a.source);
+    const line = resolve(a.source, 'pour');
     const known = line && recipe.ingredients.some((l) => l.name === line);
     if (!known) {
       extras.add(a.source.label);
@@ -149,7 +149,9 @@ export function scoreMix(
 
   // Garnish.
   const wanted = recipe.ingredients.filter((l) => l.garnish && !l.optional);
-  const got = new Set(actions.flatMap((a) => (a.type === 'garnish' ? [resolve(a.source)] : [])));
+  const got = new Set(
+    actions.flatMap((a) => (a.type === 'garnish' ? [resolve(a.source, 'garnish')] : [])),
+  );
   const garnishHits = wanted.filter((l) => got.has(l.name)).length;
   for (const l of wanted)
     if (!got.has(l.name)) feedback.push({ code: 'garnish_missing', line: l.name });
@@ -165,7 +167,7 @@ export function scoreMix(
   const raw = amounts * 45 + order * 25 + technique * 20 + garnish * 10 - penalty;
   const score = Math.max(0, Math.min(100, Math.round(raw)));
   if (!feedback.length) feedback.push({ code: 'perfect' });
-  const stars = score >= 85 ? 3 : score >= 65 ? 2 : score >= 40 ? 1 : 0;
+  const stars = score >= 92 ? 3 : score >= 75 ? 2 : score >= 50 ? 1 : 0;
   const r1 = (x: number) => Math.round(x * 100) / 100;
   return {
     score,

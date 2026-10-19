@@ -12,6 +12,7 @@ import { toast } from './lib/ui.js';
 import { mascotSvg } from './svg/art.js';
 import { renderBar } from './views/bar.js';
 import { gameView } from './game/scene.js';
+import { checkTrainings, onTrainingActivity } from './game/training.js';
 import { leaveMake, renderMake } from './views/make.js';
 import { renderRecipes, setRecipeFilterFromHash } from './views/recipes.js';
 import { renderActivity, renderGear, renderShopping } from './views/lists.js';
@@ -181,6 +182,7 @@ async function boot() {
     main.focus({ preventScroll: true });
   });
   render();
+  void checkTrainings();
 
   connectLive({
     status: (up) => {
@@ -196,6 +198,7 @@ async function boot() {
       state.flash.add(key);
       setTimeout(() => state.flash.delete(key), 1200);
       if (a.source !== 'web') toast(describe(a), a.source === 'mcp' ? 'ai' : 'you');
+      if (a.entity === 'training') onTrainingActivity(a);
       pending = (pending ?? Promise.resolve())
         .then(() => load(slicesFor(a.entity)))
         .catch(() => undefined);

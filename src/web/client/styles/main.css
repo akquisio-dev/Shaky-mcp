@@ -2141,3 +2141,16 @@ body.is-dragging {
     font-size: 2rem;
   }
 }
+
+.offer {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.4rem;
+}
+
+.offer-recipe {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  margin: 0;
+}

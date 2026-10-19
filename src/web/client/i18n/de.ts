@@ -291,6 +291,15 @@ export const de: Dict = {
     servings: 'Portionen',
     open: 'Echt mixen',
   },
+  training: {
+    offerTitle: 'Shaky hat eine Übung für dich',
+    withSteps: 'Die Schritte werden beim Mixen angezeigt.',
+    fromMemory: 'Diesmal ohne Schritte. Mix aus dem Kopf.',
+    later: 'Später',
+    go: 'Los geht’s',
+    cancelled: 'Shaky hat die Übung abgebrochen.',
+    sent: 'Shaky hat dein Ergebnis und kann dir im Chat Feedback geben.',
+  },
   backup: {
     title: 'Sicherung',
     hint: 'Speichert Flaschen, Ausstattung, Gläser, Rezepte und Einkaufsliste als eine JSON-Datei. Der Verlauf ist nicht enthalten.',

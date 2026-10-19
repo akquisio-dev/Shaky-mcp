@@ -59,6 +59,8 @@ describe('MCP server', () => {
       'shopping_list_get',
       'shopping_list_add',
       'shopping_list_update',
+      'start_training',
+      'get_training_result',
     ]) {
       expect(names).toContain(n);
     }

@@ -299,6 +299,15 @@ export const en = {
     servings: 'Servings',
     open: 'Mix for real',
   },
+  training: {
+    offerTitle: 'Shaky has a training for you',
+    withSteps: 'The steps are shown while you mix.',
+    fromMemory: 'No steps this time. Mix it from memory.',
+    later: 'Later',
+    go: "Let's go",
+    cancelled: 'Shaky cancelled the training.',
+    sent: 'Shaky has your result and can give you feedback in the chat.',
+  },
   backup: {
     title: 'Backup',
     hint: 'Saves bottles, equipment, glasses, recipes and the shopping list as one JSON file. History is not included.',

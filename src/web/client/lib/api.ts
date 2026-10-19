@@ -5,8 +5,10 @@ import type { ShoppingItem } from '../../../db/repos/misc.js';
 import type { IngredientView } from '../../../core/inventory.js';
 import type { RecipeWithCheck, MakeableResult } from '../../../core/recipes.js';
 import type { BarOverview } from '../../../core/overview.js';
+import type { Training } from '../../../core/training.js';
 
 export type {
+  Training,
   Activity,
   Equipment,
   Glass,
@@ -94,5 +96,9 @@ export const api = {
   mixLog: () => req<MixLogEntry[]>('GET', '/mix?limit=30'),
   importBar: (data: unknown, mode: 'merge' | 'replace') =>
     req<Mut<unknown>>('POST', '/import', { data, mode }),
+  trainings: (open = false) => req<Training[]>('GET', `/trainings${open ? '?open=true' : ''}`),
+  startTraining: (id: number) => req<Mut<Training>>('POST', `/trainings/${id}/start`, {}),
+  submitTraining: (id: number, actions: unknown[]) =>
+    req<Mut<Training>>('POST', `/trainings/${id}/submit`, { actions }),
   settings: (b: object) => req<Record<string, unknown>>('PATCH', '/settings', b),
 };

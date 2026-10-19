@@ -28,6 +28,14 @@ import {
 } from '../core/inventory.js';
 import { logMix } from '../core/mixing.js';
 import { exportBar, importBar } from '../core/backup.js';
+import {
+  cancelTraining,
+  getTraining,
+  listTrainings,
+  markTrainingStarted,
+  startTraining,
+  submitTraining,
+} from '../core/training.js';
 import { barOverview } from '../core/overview.js';
 import {
   deleteRecipe,
@@ -231,6 +239,19 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
   api.delete('/shopping/:id', (c) =>
     c.json(done(updateShoppingItem(ctx, id(c), { remove: true }))),
   );
+
+  // trainings
+  api.get('/trainings', (c) => c.json(listTrainings(ctx, { open: bool(c.req.query('open')) })));
+  api.get('/trainings/:id', (c) => c.json(getTraining(ctx, id(c))));
+  api.post('/trainings', async (c) =>
+    c.json(done(startTraining(ctx, (await body(c)) as never)), 201),
+  );
+  api.post('/trainings/:id/start', (c) => c.json(done(markTrainingStarted(ctx, id(c)))));
+  api.post('/trainings/:id/cancel', (c) => c.json(done(cancelTraining(ctx, id(c)))));
+  api.post('/trainings/:id/submit', async (c) => {
+    const b = await body(c);
+    return c.json(done(submitTraining(ctx, id(c), b.actions)));
+  });
 
   // backup
   api.get('/export', (c) => {

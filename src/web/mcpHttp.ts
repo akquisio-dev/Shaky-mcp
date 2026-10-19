@@ -12,7 +12,7 @@ const rpcError = (c: Context, status: 400 | 404, message: string) =>
  * Streamable HTTP endpoint at /mcp. One McpServer per session, because a
  * server instance can only be connected to one transport.
  */
-export function createMcpHttpHandler(db: Db, onWrite?: () => void) {
+export function createMcpHttpHandler(db: Db, onWrite?: () => void, webUrl?: string) {
   const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
 
   const handler = async (c: Context) => {
@@ -38,7 +38,7 @@ export function createMcpHttpHandler(db: Db, onWrite?: () => void) {
     transport.onclose = () => {
       if (transport.sessionId) sessions.delete(transport.sessionId);
     };
-    await createMcpServer(db).connect(transport);
+    await createMcpServer(db, { webUrl }).connect(transport);
     return transport.handleRequest(c.req.raw, { parsedBody: body });
   };
 

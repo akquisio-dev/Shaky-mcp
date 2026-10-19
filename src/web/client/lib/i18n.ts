@@ -52,6 +52,20 @@ function sentence(a: Activity, who: string): string {
       return de ? `${who} hat die Bar ersetzt: ${what}` : `${who} replaced the bar: ${what}`;
     return de ? `${who} hat Daten geladen: ${what}` : `${who} loaded data: ${what}`;
   }
+  if (a.entity === 'training') {
+    const score = a.data.score as number | undefined;
+    if (a.action === 'created')
+      return de
+        ? `${who} hat eine Übung vorbereitet: ${name}`
+        : `${who} set up a training: ${name}`;
+    if (a.action === 'finished')
+      return de
+        ? `${who} hat ${name} geübt: ${score}/100`
+        : `${who} practiced ${name}: ${score}/100`;
+    if (a.action === 'started')
+      return de ? `${who} hat die Übung ${name} begonnen` : `${who} started the ${name} training`;
+    return de ? `${who} hat die Übung ${name} beendet` : `${who} ended the ${name} training`;
+  }
   if (a.entity === 'settings') {
     return de
       ? `${who} hat die Einstellung ${String(a.data.key)} geändert`

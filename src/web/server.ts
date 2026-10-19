@@ -40,7 +40,7 @@ export function createApp(db: Db, opts: AppOptions) {
   const bus = new EventBus();
   const watcher = new ActivityWatcher(db, bus, opts.pollMs);
   const poke = () => watcher.poll();
-  const mcp = createMcpHttpHandler(db, poke);
+  const mcp = createMcpHttpHandler(db, poke, `http://localhost:${opts.port}`);
   let hosts = allowedHosts(opts.host, opts.port);
   /** Called once listening, so port 0 (pick any) still gets a correct Host check. */
   const setPort = (port: number) => {
