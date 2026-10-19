@@ -12,11 +12,13 @@ import { toast } from './lib/ui.js';
 import { mascotSvg } from './svg/art.js';
 import { renderBar } from './views/bar.js';
 import { gameView } from './game/scene.js';
+import { leaveMake, renderMake } from './views/make.js';
 import { renderRecipes, setRecipeFilterFromHash } from './views/recipes.js';
 import { renderActivity, renderGear, renderShopping } from './views/lists.js';
 
-type Route = 'bar' | 'mix' | 'recipes' | 'shopping' | 'gear' | 'activity';
-const ROUTES: Route[] = ['bar', 'mix', 'recipes', 'shopping', 'gear', 'activity'];
+type Route = 'bar' | 'mix' | 'recipes' | 'shopping' | 'gear' | 'activity' | 'make';
+const TABS = ['bar', 'mix', 'recipes', 'shopping', 'gear', 'activity'] as const;
+const ROUTES: Route[] = [...TABS, 'make'];
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const main = h('main', { id: 'main', tabIndex: -1 });
@@ -75,7 +77,7 @@ function header(): HTMLElement {
     h(
       'nav',
       { class: 'tabs', 'aria-label': 'Shaky' },
-      ROUTES.map((r) =>
+      TABS.map((r) =>
         h(
           'a',
           {
@@ -152,6 +154,9 @@ function render(): void {
     case 'gear':
       view = renderGear();
       break;
+    case 'make':
+      view = renderMake(params, render);
+      break;
     case 'activity':
       view = renderActivity();
       break;
@@ -171,6 +176,7 @@ async function boot() {
   await loadAll();
   onChange(render);
   window.addEventListener('hashchange', () => {
+    if (route().name !== 'make') leaveMake();
     render();
     main.focus({ preventScroll: true });
   });

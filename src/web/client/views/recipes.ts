@@ -285,6 +285,7 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
         { class: 'btn', href: `#/mix?recipe=${r.id}`, onclick: () => close() },
         d.recipe.practice,
       ),
+      h('a', { class: 'btn', href: `#/make?recipe=${r.id}`, onclick: () => close() }, d.make.open),
       h('label', { class: 'check' }, deduct, d.recipe.deduct),
       h(
         'button',

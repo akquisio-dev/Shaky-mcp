@@ -278,6 +278,19 @@ export const de: Dict = {
       }
     },
   },
+  make: {
+    stepOf: (i, n) => `Schritt ${i} von ${n}`,
+    startTimer: (s) => `Timer ${s} s starten`,
+    timeUp: 'Zeit ist um!',
+    next: 'Weiter',
+    back: 'Zurück',
+    done: 'Fertig! Prost.',
+    rate: 'Wie war er?',
+    finish: 'Eintragen und Bar aktualisieren',
+    finishNoStock: 'Nur eintragen, Bestand nicht ändern',
+    servings: 'Portionen',
+    open: 'Echt mixen',
+  },
   backup: {
     title: 'Sicherung',
     hint: 'Speichert Flaschen, Ausstattung, Gläser, Rezepte und Einkaufsliste als eine JSON-Datei. Der Verlauf ist nicht enthalten.',

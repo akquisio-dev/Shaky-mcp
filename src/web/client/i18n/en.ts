@@ -286,6 +286,19 @@ export const en = {
       }
     },
   },
+  make: {
+    stepOf: (i: number, n: number) => `Step ${i} of ${n}`,
+    startTimer: (s: number) => `Start ${s} s timer`,
+    timeUp: 'Time is up!',
+    next: 'Next',
+    back: 'Back',
+    done: 'Done! Cheers.',
+    rate: 'How was it?',
+    finish: 'Log it and update my bar',
+    finishNoStock: 'Log without touching stock',
+    servings: 'Servings',
+    open: 'Mix for real',
+  },
   backup: {
     title: 'Backup',
     hint: 'Saves bottles, equipment, glasses, recipes and the shopping list as one JSON file. History is not included.',
