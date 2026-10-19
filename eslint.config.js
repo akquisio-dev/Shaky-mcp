@@ -29,4 +29,8 @@ export default tseslint.config(
     files: ['scripts/**', 'src/cli.ts', 'tests/**'],
     rules: { 'no-console': 'off' },
   },
+  {
+    files: ['tests/**'],
+    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+  },
 );

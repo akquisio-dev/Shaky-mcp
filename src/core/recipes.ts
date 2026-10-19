@@ -73,17 +73,25 @@ export function getRecipeWithCheck(ctx: Ctx, ref: number | string): RecipeWithCh
   return { ...r, availability: checker(ctx)(r) };
 }
 
+export interface MakeableResult {
+  makeable: RecipeCheck[];
+  missing_one: RecipeCheck[];
+  missing_more_count: number;
+  /** Only filled with include_missing_more. */
+  missing_more?: RecipeCheck[];
+}
+
 export function findMakeable(
   ctx: Ctx,
   opts: { tag?: string; include_missing_more?: boolean } = {},
-) {
+): MakeableResult {
   const all = listRecipesWithCheck(ctx, { tag: opts.tag }).map((r) => r.availability);
+  const more = all.filter((c) => c.status === 'missing_more');
   return {
     makeable: all.filter((c) => c.status === 'makeable'),
     missing_one: all.filter((c) => c.status === 'missing_one'),
-    ...(opts.include_missing_more
-      ? { missing_more: all.filter((c) => c.status === 'missing_more') }
-      : { missing_more_count: all.filter((c) => c.status === 'missing_more').length }),
+    missing_more_count: more.length,
+    ...(opts.include_missing_more && { missing_more: more }),
   };
 }
 
