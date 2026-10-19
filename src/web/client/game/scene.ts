@@ -570,7 +570,7 @@ function endBusy() {
 // ---------- building ----------
 
 function targetSeconds(action: string, fallback: number): number {
-  const step = guide()?.steps.find((s) => s.action === action);
+  const step = guide()?.personal.steps.find((s) => s.action === action);
   return step?.duration_s ?? fallback;
 }
 
@@ -961,7 +961,7 @@ function buildPanel(): HTMLElement {
             ? h(
                 'ol',
                 { class: 'steps' },
-                r.steps.map((s) =>
+                r.personal.steps.map((s) =>
                   h(
                     'li',
                     null,
@@ -1062,7 +1062,8 @@ async function serve() {
     return;
   }
   if (r) {
-    showScore(scoreMix(r as unknown as GameRecipe, game.actions), r.name);
+    const mine = { ...r, ingredients: r.personal.ingredients, steps: r.personal.steps };
+    showScore(scoreMix(mine as unknown as GameRecipe, game.actions), r.name);
     return;
   }
   const abv = estimatedAbv();

@@ -15,11 +15,17 @@ export function toDateOnly(iso: string): string {
 }
 
 /**
- * A manual expires_at wins. Otherwise the item expires opened_at + shelf life
- * (own value, else the category default). Unopened items do not expire.
+ * A manual expires_at wins. Opened items expire opened_at + shelf life (own
+ * value, else the category default). Unopened items expire on their best
+ * before date if one is known, otherwise not at all.
  */
 export function expiryInfo(
-  item: { opened_at: string | null; shelf_life_days: number | null; expires_at: string | null },
+  item: {
+    opened_at: string | null;
+    shelf_life_days: number | null;
+    expires_at: string | null;
+    best_before?: string | null;
+  },
   categoryDays: number | null | undefined,
   now: Date,
   warnDays = 7,
@@ -28,6 +34,8 @@ export function expiryInfo(
   let expiresMs: number | null = null;
   if (item.expires_at) expiresMs = Date.parse(item.expires_at);
   else if (item.opened_at && shelf !== null) expiresMs = Date.parse(item.opened_at) + shelf * DAY;
+  // Unopened: the best before date printed on the pack.
+  else if (!item.opened_at && item.best_before) expiresMs = Date.parse(item.best_before);
   if (expiresMs === null || Number.isNaN(expiresMs)) {
     return {
       shelf_life_days: shelf,

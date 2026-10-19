@@ -118,7 +118,15 @@ export function resolveIngredient(ctx: Ctx, ref: number | string): Ingredient {
     if (!i) throw new ShakyError('not_found', `No ingredient with id ${ref}.`);
     return i;
   }
-  const hits = findIngredientsByName(ctx.db, ref);
+  // "Red Bull (Sugarfree)" names the entry that holds that variant.
+  const withVariant = /^(.*)\s+\(([^)]+)\)$/.exec(ref.trim());
+  const hits = findIngredientsByName(ctx.db, ref).length
+    ? findIngredientsByName(ctx.db, ref)
+    : withVariant
+      ? findIngredientsByName(ctx.db, withVariant[1]!).filter((i) =>
+          i.variants.some((v) => v.name.toLowerCase() === withVariant[2]!.toLowerCase()),
+        )
+      : [];
   if (hits.length === 1) return hits[0]!;
   if (hits.length > 1) {
     throw new ShakyError(
@@ -175,6 +183,8 @@ const TRACKED = [
   'subcategory',
   'tags',
   'provides',
+  'variants',
+  'best_before',
   'abv',
   'color',
   'container',
@@ -220,6 +230,11 @@ export function addIngredients(ctx: Ctx, inputs: IngredientInput[]) {
   return mutate(ctx, (cs) => items.map((data) => insertOne(ctx, cs, data)));
 }
 
+/** Inserts inside an existing change set (used by preparations). */
+export function addIngredientIn(ctx: Ctx, cs: ChangeSet, input: IngredientInput) {
+  return insertOne(ctx, cs, ingredientInputSchema.parse(input));
+}
+
 function insertOne(ctx: Ctx, cs: ChangeSet, data: ReturnType<typeof ingredientInputSchema.parse>) {
   {
     const d = getCategoryDefaults(ctx.db, data.category);
@@ -243,12 +258,14 @@ function insertOne(ctx: Ctx, cs: ChangeSet, data: ReturnType<typeof ingredientIn
     const id = insertIngredient(ctx.db, {
       ...data,
       opened_at: normalizeDate(data.opened_at),
+      best_before: normalizeDate(data.best_before),
+      variants: data.variants ?? [],
       expires_at: normalizeDate(data.expires_at),
       tags: data.tags ?? [],
       provides: data.provides ?? [],
       location,
       fill_level: data.fill_level ?? 'full',
-      quantity: data.quantity ?? 1,
+      quantity: data.variants?.length ? sumVariants(data.variants) : (data.quantity ?? 1),
       ...level,
       created_at: ts,
       updated_at: ts,
@@ -338,6 +355,10 @@ export function updateIngredientFields(ctx: Ctx, ref: number | string, input: In
       {
         ...patch,
         opened_at: normalizeDate(patch.opened_at),
+        best_before: normalizeDate(patch.best_before),
+        ...(patch.variants && {
+          quantity: patch.variants.length ? sumVariants(patch.variants) : patch.quantity,
+        }),
         expires_at: normalizeDate(patch.expires_at),
         ...level,
       } as Partial<Ingredient>,
@@ -377,8 +398,24 @@ export function writeStock(
   patch: Partial<Ingredient>,
   action: string,
 ) {
+  // Fewer pieces left: take them from the variants too, the largest first.
+  if (cur.variants.length && patch.quantity !== undefined && patch.quantity < cur.quantity) {
+    const variants = cur.variants.map((v) => ({ ...v }));
+    let take = Math.ceil(cur.quantity - patch.quantity - 1e-9);
+    while (take > 0) {
+      const v = variants.filter((x) => x.quantity > 0).sort((a, b) => b.quantity - a.quantity)[0];
+      if (!v) break;
+      const n = Math.min(v.quantity, take);
+      v.quantity -= n;
+      take -= n;
+    }
+    patch = { ...patch, variants };
+  }
   return applyPatch(ctx, cs, cur, patch, action);
 }
+
+export const sumVariants = (vs: { quantity: number }[]) =>
+  Math.round(vs.reduce((s, v) => s + v.quantity, 0) * 100) / 100;
 
 export function getExpiring(ctx: Ctx, days: number, includeExpired = true) {
   return listIngredientViews(ctx)

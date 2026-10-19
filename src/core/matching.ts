@@ -54,6 +54,7 @@ function bag(i: IngredientView): Set<string> {
     ...words(i.subcategory),
     ...i.tags.flatMap(words),
     ...i.provides.flatMap(words),
+    ...i.variants.flatMap((v) => words(v.name)),
     ...words(i.category.replace(/_/g, ' ')),
   ]);
 }

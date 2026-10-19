@@ -6,6 +6,8 @@ import {
   type IngredientView,
   type Meta,
   type MixLogEntry,
+  type Preference,
+  type Template,
   type RecipeWithCheck,
   type ShoppingItem,
 } from './api.js';
@@ -19,6 +21,8 @@ export interface State {
   shopping: ShoppingItem[];
   activity: Activity[];
   mixes: MixLogEntry[];
+  preferences: Preference[];
+  preparations: Template[];
   /** Ids that changed through the live feed, for a short wobble. */
   flash: Set<string>;
 }
@@ -31,7 +35,9 @@ type Slice =
   | 'recipes'
   | 'shopping'
   | 'activity'
-  | 'mixes';
+  | 'mixes'
+  | 'preferences'
+  | 'preparations';
 
 export const state: State = {
   ingredients: [],
@@ -41,6 +47,8 @@ export const state: State = {
   shopping: [],
   activity: [],
   mixes: [],
+  preferences: [],
+  preparations: [],
   flash: new Set(),
 };
 
@@ -53,6 +61,8 @@ const loaders: Record<Slice, () => Promise<void>> = {
   shopping: async () => void (state.shopping = await api.shopping()),
   activity: async () => void (state.activity = await api.activity()),
   mixes: async () => void (state.mixes = await api.mixLog()),
+  preferences: async () => void (state.preferences = await api.preferences()),
+  preparations: async () => void (state.preparations = await api.preparations()),
 };
 
 const listeners = new Set<() => void>();
@@ -78,6 +88,10 @@ export function slicesFor(entity: string): Slice[] {
       return ['glassware', 'activity'];
     case 'recipe':
       return ['recipes', 'activity'];
+    case 'preference':
+      return ['preferences', 'recipes', 'activity'];
+    case 'prep':
+      return ['preparations', 'ingredients', 'recipes', 'activity'];
     case 'shopping':
       return ['shopping', 'activity'];
     case 'location':

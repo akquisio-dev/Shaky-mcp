@@ -5,6 +5,7 @@ import type { IngredientView } from '../lib/api.js';
 import { ingredientSvg } from '../svg/art.js';
 import { daysSince } from '../lib/ui.js';
 import { openIngredient, openIngredientForm } from './ingredient.js';
+import { openPrep } from './prep.js';
 import { startWaiting, waitingTraining } from '../game/training.js';
 
 export function badges(i: IngredientView): HTMLElement[] {
@@ -124,9 +125,14 @@ export function renderBar(): HTMLElement {
         : null,
     ),
     h(
-      'button',
-      { class: 'btn btn-primary', type: 'button', onclick: () => openIngredientForm() },
-      `+ ${d.bar.add}`,
+      'div',
+      { class: 'bar-actions' },
+      h('button', { class: 'btn', type: 'button', onclick: () => openPrep() }, d.prep.open),
+      h(
+        'button',
+        { class: 'btn btn-primary', type: 'button', onclick: () => openIngredientForm() },
+        `+ ${d.bar.add}`,
+      ),
     ),
   );
 

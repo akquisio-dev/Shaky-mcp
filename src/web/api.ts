@@ -28,6 +28,9 @@ import {
 } from '../core/inventory.js';
 import { logMix } from '../core/mixing.js';
 import { exportBar, importBar } from '../core/backup.js';
+import { addPreference, listPreferences, removePreference } from '../core/preferences.js';
+import { listTemplates, makePreparation, saveTemplate } from '../core/prep.js';
+import { batchCalculator } from '../core/batch.js';
 import { updateSettings } from '../core/settings.js';
 import { countExampleData, removeExampleData } from '../core/examples.js';
 import {
@@ -244,6 +247,21 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
     const b = await body(c);
     return c.json(done(submitTraining(ctx, id(c), b.actions)));
   });
+
+  // personal taste, preparations, batches
+  api.get('/preferences', (c) => c.json(listPreferences(ctx)));
+  api.post('/preferences', async (c) =>
+    c.json(done(addPreference(ctx, (await body(c)) as never)), 201),
+  );
+  api.delete('/preferences/:id', (c) => c.json(done(removePreference(ctx, id(c)))));
+  api.get('/preparations', (c) => c.json(listTemplates(ctx)));
+  api.post('/preparations', async (c) =>
+    c.json(done(saveTemplate(ctx, (await body(c)) as never)), 201),
+  );
+  api.post('/preparations/make', async (c) =>
+    c.json(done(makePreparation(ctx, (await body(c)) as never)), 201),
+  );
+  api.post('/batch', async (c) => c.json(batchCalculator(ctx, (await body(c)) as never)));
 
   // backup
   api.get('/export', (c) => {

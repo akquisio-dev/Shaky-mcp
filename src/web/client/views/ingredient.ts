@@ -59,6 +59,19 @@ export function openIngredient(id: number): void {
     );
     if (r) close();
   };
+  const stepVariant = async (n: number, by: number) => {
+    const next = i.variants.map((v, k) =>
+      k === n ? { ...v, quantity: Math.max(0, v.quantity + by) } : v,
+    );
+    const total = next.reduce((s, v) => s + v.quantity, 0);
+    const r = await attempt(() =>
+      api.updateIngredient(i.id, {
+        variants: next,
+        ...(total > 0 && i.fill_level === 'empty' ? { fill_level: 'full' } : {}),
+      }),
+    );
+    if (r) close();
+  };
   const body = h(
     'div',
     { class: 'sheet-body ing-detail' },
@@ -75,25 +88,70 @@ export function openIngredient(id: number): void {
         i.notes ? h('p', { class: 'muted' }, i.notes) : null,
       ),
     ),
-    counted ? h('h3', null, d.ing.quantity) : h('h3', null, d.ing.fill),
-    // Counted things (cans, fruit, herbs) get a stepper; bottles get the level picker.
-    counted
+    i.variants.length
       ? h(
           'div',
-          { class: 'stepper big' },
-          h(
-            'button',
-            { type: 'button', class: 'icon-btn', 'aria-label': '-1', onclick: () => step(-1) },
-            '−',
-          ),
-          h('output', null, String(i.quantity)),
-          h(
-            'button',
-            { type: 'button', class: 'icon-btn', 'aria-label': '+1', onclick: () => step(1) },
-            '+',
+          { class: 'variant-list' },
+          h('h3', null, d.ing.variants),
+          i.variants.map((v, n) =>
+            h(
+              'div',
+              { class: 'variant-item' },
+              h('span', {
+                class: 'swatch-dot',
+                style: { background: v.label_color ?? i.display_color },
+              }),
+              h('span', { class: 'variant-name' }, v.name),
+              h(
+                'span',
+                { class: 'stepper' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    class: 'icon-btn',
+                    'aria-label': '-1',
+                    onclick: () => stepVariant(n, -1),
+                  },
+                  '−',
+                ),
+                h('output', null, String(v.quantity)),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    class: 'icon-btn',
+                    'aria-label': '+1',
+                    onclick: () => stepVariant(n, 1),
+                  },
+                  '+',
+                ),
+              ),
+            ),
           ),
         )
-      : levelButtons,
+      : null,
+    i.variants.length ? null : counted ? h('h3', null, d.ing.quantity) : h('h3', null, d.ing.fill),
+    // Counted things (cans, fruit, herbs) get a stepper; bottles get the level picker.
+    i.variants.length && counted
+      ? null
+      : counted
+        ? h(
+            'div',
+            { class: 'stepper big' },
+            h(
+              'button',
+              { type: 'button', class: 'icon-btn', 'aria-label': '-1', onclick: () => step(-1) },
+              '−',
+            ),
+            h('output', null, String(i.quantity)),
+            h(
+              'button',
+              { type: 'button', class: 'icon-btn', 'aria-label': '+1', onclick: () => step(1) },
+              '+',
+            ),
+          )
+        : levelButtons,
     h(
       'div',
       { class: 'actions' },
@@ -158,6 +216,49 @@ export function openIngredientForm(i?: IngredientView): void {
     placeholder: 'shelf',
     autocomplete: 'off',
   });
+  // Variants of one product under one entry (Red Bull: Original, Sugarfree ...).
+  const variants = (i?.variants ?? []).map((v) => ({ ...v }));
+  const variantBox = h('div', { class: 'rows' });
+  const drawVariants = () =>
+    variantBox.replaceChildren(
+      ...variants.map((v, n) =>
+        h(
+          'div',
+          { class: 'row variant-row' },
+          h('input', {
+            value: v.name,
+            placeholder: d.ing.variantPh,
+            'aria-label': d.ing.variants,
+            oninput: (e: Event) => (v.name = (e.target as HTMLInputElement).value),
+          }),
+          h('input', {
+            type: 'number',
+            min: 0,
+            value: String(v.quantity),
+            class: 'num',
+            'aria-label': d.ing.quantity,
+            oninput: (e: Event) => (v.quantity = Number((e.target as HTMLInputElement).value) || 0),
+          }),
+          h('input', {
+            type: 'color',
+            value: v.label_color ?? '#7a4fd1',
+            'aria-label': d.ing.labelColor,
+            oninput: (e: Event) => (v.label_color = (e.target as HTMLInputElement).value),
+          }),
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'icon-btn',
+              'aria-label': t().gear.remove,
+              onclick: () => (variants.splice(n, 1), drawVariants()),
+            },
+            '×',
+          ),
+        ),
+      ),
+    );
+  drawVariants();
   const labelOn = h('input', {
     type: 'checkbox',
     name: 'label_on',
@@ -316,6 +417,25 @@ export function openIngredientForm(i?: IngredientView): void {
       h('input', { name: 'expires_at', type: 'date', value: i?.expires_at?.slice(0, 10) ?? '' }),
     ),
     field(
+      d.ing.bestBefore,
+      h('input', { name: 'best_before', type: 'date', value: i?.best_before?.slice(0, 10) ?? '' }),
+    ),
+    h(
+      'div',
+      { class: 'field span-2' },
+      h('span', null, d.ing.variants),
+      variantBox,
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'btn btn-small',
+          onclick: () => (variants.push({ name: '', quantity: 1 }), drawVariants()),
+        },
+        `+ ${d.ing.addVariant}`,
+      ),
+    ),
+    field(
       d.ing.provides,
       h('input', {
         name: 'provides',
@@ -372,6 +492,8 @@ export function openIngredientForm(i?: IngredientView): void {
       opened_at: str(f.get('opened_at')),
       shelf_life_days: num(f.get('shelf_life_days')),
       expires_at: str(f.get('expires_at')),
+      best_before: str(f.get('best_before')),
+      variants: variants.filter((v) => v.name.trim()),
       tags: String(f.get('tags') ?? '')
         .split(',')
         .map((s) => s.trim())

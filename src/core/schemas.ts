@@ -39,6 +39,7 @@ export const EQUIPMENT_TYPES = [
   'mixing_glass',
   'citrus_press',
   'ice_crusher',
+  'slush_machine',
   'other',
 ] as const;
 
@@ -88,6 +89,8 @@ export const UNITS = [
   'leaf',
   'sprig',
   'scoop',
+  'g',
+  'kg',
   'top',
   'to_taste',
 ] as const;
@@ -165,6 +168,21 @@ export const ingredientInputSchema = z.object({
   abv: z.number().min(0).max(100).nullish(),
   color: hexColorSchema.nullish(),
   container: containerSchema.nullish().describe('Omit to use the category default.'),
+  variants: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(40),
+        quantity: z.number().min(0).max(1000),
+        label_color: hexColorSchema.nullish(),
+        color: hexColorSchema.nullish(),
+      }),
+    )
+    .max(20)
+    .optional()
+    .describe(
+      'Variants of the same product under one entry, e.g. Red Bull: [{name: "Original", quantity: 4}, {name: "Sugarfree", quantity: 2}]. quantity becomes their sum.',
+    ),
+  best_before: dateSchema.nullish().describe('Best before date while unopened (juice, soda).'),
   label_color: hexColorSchema
     .nullish()
     .describe('Color of the label, or of the whole can/carton. Separate from the liquid color.'),
@@ -276,6 +294,10 @@ export const equipmentInputSchema = z.object({
   name: z.string().trim().min(1).max(80),
   type: equipmentTypeSchema,
   available: z.boolean().optional(),
+  specs: z
+    .record(z.string(), z.number())
+    .optional()
+    .describe('Numbers for the tool, e.g. a slush machine: {"min_ml": 1000, "max_ml": 3000}.'),
   substitutes_for: z
     .array(equipmentTypeSchema)
     .max(10)
@@ -326,4 +348,11 @@ export const categoryDefaultsInputSchema = z.object({
   bottle_size_ml: z.number().positive().nullable().optional(),
   color: hexColorSchema.optional(),
   container: containerSchema.optional(),
+  abv: z
+    .number()
+    .min(0)
+    .max(100)
+    .nullable()
+    .optional()
+    .describe('Typical strength for drinks whose bottle has no ABV.'),
 });

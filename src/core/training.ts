@@ -13,6 +13,7 @@ import { mutate, nowIso, ShakyError, type Ctx } from './context.js';
 import { listIngredientViews } from './inventory.js';
 import { matchesSpec } from './matching.js';
 import { getRecipeWithCheck, resolveRecipe } from './recipes.js';
+import { listPreferences, personalize } from './preferences.js';
 
 export type TrainingStatus = 'pending' | 'active' | 'done' | 'cancelled';
 
@@ -219,7 +220,10 @@ export function submitTraining(ctx: Ctx, id: number, actions: unknown) {
     if (t.status === 'cancelled') throw new ShakyError('conflict', 'This training was cancelled.');
     const recipe = t.recipe_id !== null ? getRecipe(ctx.db, t.recipe_id) : undefined;
     if (!recipe) throw new ShakyError('not_found', 'The recipe of this training was deleted.');
-    const result = scoreMix(recipe as GameRecipe, log, resolver(ctx, recipe, t.sandbox));
+    // Score against the recipe as this user makes it.
+    const mine = personalize(recipe, listPreferences(ctx));
+    const personal = { ...recipe, ingredients: mine.ingredients, steps: mine.steps };
+    const result = scoreMix(personal as GameRecipe, log, resolver(ctx, personal, t.sandbox));
     updateRow(ctx.db, 'trainings', id, {
       status: 'done',
       started_at: t.started_at ?? nowIso(ctx),

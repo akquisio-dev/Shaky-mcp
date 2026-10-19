@@ -6,6 +6,7 @@ import { deductCount, deductVolume, isCountUnit, toMl, type StockState } from '.
 import { listIngredientViews, resolveIngredient, writeStock } from './inventory.js';
 import { checkLine } from './matching.js';
 import { resolveRecipe } from './recipes.js';
+import { listPreferences, personalize } from './preferences.js';
 import type { Unit } from './schemas.js';
 
 export interface MixInput {
@@ -56,7 +57,9 @@ export function logMix(ctx: Ctx, input: MixInput) {
         }
       } else if (recipe) {
         const stock = listIngredientViews(ctx, { include_empty: true });
-        for (const spec of recipe.ingredients) {
+        // Deduct what this user actually pours (personal adjustments applied).
+        const mine = personalize(recipe, listPreferences(ctx)).ingredients;
+        for (const spec of mine) {
           const line = checkLine(spec, stock);
           if (!line.match) {
             if (!spec.optional && !spec.garnish)

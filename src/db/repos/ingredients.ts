@@ -2,6 +2,13 @@ import type { Db } from '../connection.js';
 import { insertRow, parseJson, updateRow } from '../sql.js';
 import type { FillLevel } from '../../core/schemas.js';
 
+export interface Variant {
+  name: string;
+  quantity: number;
+  label_color?: string | null;
+  color?: string | null;
+}
+
 export interface Ingredient {
   id: number;
   name: string;
@@ -10,6 +17,8 @@ export interface Ingredient {
   subcategory: string | null;
   tags: string[];
   provides: string[];
+  variants: Variant[];
+  best_before: string | null;
   origin: string | null;
   abv: number | null;
   color: string | null;
@@ -32,9 +41,13 @@ export interface Ingredient {
   updated_at: string;
 }
 
-type Row = Omit<Ingredient, 'tags' | 'provides' | 'archived' | 'amount_is_estimate'> & {
+type Row = Omit<
+  Ingredient,
+  'tags' | 'provides' | 'variants' | 'archived' | 'amount_is_estimate'
+> & {
   tags: string;
   provides: string;
+  variants: string;
   archived: number;
   amount_is_estimate: number;
 };
@@ -44,6 +57,7 @@ function map(r: Row): Ingredient {
     ...r,
     tags: parseJson<string[]>(r.tags, []),
     provides: parseJson<string[]>(r.provides, []),
+    variants: parseJson<Variant[]>(r.variants, []),
     archived: r.archived === 1,
     amount_is_estimate: r.amount_is_estimate === 1,
   };

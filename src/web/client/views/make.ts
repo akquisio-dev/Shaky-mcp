@@ -50,7 +50,9 @@ export function renderMake(params: URLSearchParams, rerender: () => void): HTMLE
   const r = state.recipes.find((x) => x.id === id);
   if (!r) return h('div', { class: 'view' }, h('p', { class: 'empty-state' }, d.recipe.none));
   void keepAwake(true);
-  const total = r.steps.length;
+  // The user's own amounts (personal preferences applied).
+  const steps = r.personal.steps;
+  const total = steps.length;
   const done = index >= total;
   const scaled = (a?: number) =>
     a === undefined ? undefined : Math.round(a * servings * 100) / 100;
@@ -80,7 +82,7 @@ export function renderMake(params: URLSearchParams, rerender: () => void): HTMLE
 
   let stepCard: HTMLElement;
   if (!done) {
-    const s = r.steps[index]!;
+    const s = steps[index]!;
     const timerBox = s.duration_s
       ? h(
           'div',
@@ -231,7 +233,7 @@ export function renderMake(params: URLSearchParams, rerender: () => void): HTMLE
         h(
           'div',
           { class: 'dots', 'aria-hidden': 'true' },
-          r.steps.map((_, i) => h('span', { class: i < index ? 'on' : i === index ? 'now' : '' })),
+          steps.map((_, i) => h('span', { class: i < index ? 'on' : i === index ? 'now' : '' })),
           h('span', { class: done ? 'now' : '' }),
         ),
         stepCard,

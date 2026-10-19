@@ -2199,3 +2199,87 @@ body.is-dragging {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* ---------- variants, preferences, prep, batch ---------- */
+
+.variant-row {
+  grid-template-columns: 1fr 4.5rem 3rem 2rem;
+}
+
+.variant-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.variant-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.variant-name {
+  font-weight: 800;
+  flex: 1;
+}
+
+.swatch-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+}
+
+.pref-form {
+  display: grid;
+  grid-template-columns: auto 1fr 5rem auto 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+.pref-form input,
+.pref-form select {
+  min-width: 0;
+  padding: 0.3rem 0.5rem;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--label);
+  color: #2a1810;
+}
+
+.bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.personal-note {
+  font-weight: 600;
+  color: var(--lagoon);
+}
+
+.strength {
+  font-weight: 700;
+}
+
+.energy {
+  color: var(--danger);
+}
+
+.warnings {
+  margin: 0.6rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.recipe-side .abv {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .pref-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}

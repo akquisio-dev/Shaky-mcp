@@ -105,6 +105,10 @@ export const en = {
     save: 'Save bottle',
     openToday: 'Opened today',
     openCan: 'Opened a can',
+    bestBefore: 'Best before (unopened)',
+    variants: 'Variants',
+    variantPh: 'e.g. Sugarfree',
+    addVariant: 'Variant',
     container: 'Container',
     containerDefault: 'Category default',
     labelColor: 'Label / can color',
@@ -138,6 +142,11 @@ export const en = {
     unusable: 'empty or expired',
     toShopping: 'Add missing to shopping list',
     servingsLeft: (n: number) => (n === 1 ? 'enough for 1 drink' : `enough for ${n} drinks`),
+    avoided: 'not your thing',
+    avoidedNote: (what: string) => `Contains something you avoid: ${what}.`,
+    yourWay: 'Your way:',
+    strength: (abv: string, std: string) => `About ${abv} % alcohol, ${std} standard drinks.`,
+    energy: 'Contains an energy drink: caffeine hides how drunk you are.',
     none: 'No recipes match.',
     byAI: 'by AI',
     delete: 'Delete recipe',
@@ -213,6 +222,8 @@ export const en = {
     householdHint:
       'Everyday things that do the job when a bar tool is missing. Recipes count them as available.',
     householdPh: 'e.g. spoon',
+    minMl: 'Min. fill (ml)',
+    maxMl: 'Max. fill (ml)',
     replacesType: (t: string) => `instead of a ${t}`,
   },
   activity: {
@@ -347,6 +358,51 @@ export const en = {
     go: "Let's go",
     cancelled: 'Shaky cancelled the training.',
     sent: 'Shaky has your result and can give you feedback in the chat.',
+  },
+  prefs: {
+    title: 'My taste',
+    hint: 'Standing tweaks for your drinks. Recipes stay as saved; Shaky shows, deducts and scores your version.',
+    kind: 'Kind',
+    adjust: 'Change amount',
+    avoid: 'Avoid',
+    ingredient: 'Ingredient',
+    ingredientPh: 'e.g. lemon juice, tequila',
+    delta: 'cl more or less',
+    scope: 'Only in',
+    scopePh: 'only in, e.g. sour (optional)',
+    adjustText: (what: string, d: string, unit: string) =>
+      `${what}: ${d.startsWith('-') ? d : `+${d}`} ${unit}`,
+    avoidText: (what: string) => `No ${what}`,
+    only: (where: string) => `only in ${where}`,
+  },
+  prep: {
+    open: 'Make syrup …',
+    title: 'Make something',
+    what: 'What',
+    amount: 'Amount to make (ml)',
+    make: 'Make it',
+    fromStock: 'from your bar',
+    notFromStock: 'from the tap',
+    keeps: (days: number | null) =>
+      days ? `Keeps about ${days} days from today.` : 'Keeps a long time.',
+    made: (ml: number, what: string) => `${ml} ml ${what} made.`,
+  },
+  batch: {
+    open: 'Batch / slush',
+    title: (n: string) => `${n} in bulk`,
+    glasses: 'Glasses',
+    serving: 'Per glass (ml)',
+    servingPh: 'recipe volume',
+    machine: 'Slush machine',
+    noMachine: 'none',
+    summary: (ml: number, g: number, abv: string) =>
+      `${ml} ml for ${g} glasses, about ${abv} % alcohol.`,
+    belowMin: (ml: number, g: number) =>
+      `Below the machine minimum of ${ml} ml: make at least ${g} glasses.`,
+    aboveMax: (ml: number, g: number) =>
+      `Above the machine maximum of ${ml} ml: at most ${g} glasses per batch.`,
+    tooStrong: (max: number, add: number) =>
+      `Too strong to freeze well (keep it under ${max} %). Add about ${add} ml of the non-alcoholic parts, or use less spirit.`,
   },
   backup: {
     title: 'Backup',

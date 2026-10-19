@@ -68,6 +68,20 @@ function sentence(a: Activity, who: string): string {
       return de ? `${who} hat die Übung ${name} begonnen` : `${who} started the ${name} training`;
     return de ? `${who} hat die Übung ${name} beendet` : `${who} ended the ${name} training`;
   }
+  if (a.entity === 'preference') {
+    return a.action === 'deleted'
+      ? de
+        ? `${who} hat eine Vorliebe gelöscht: ${name}`
+        : `${who} removed a preference: ${name}`
+      : de
+        ? `${who} hat sich eine Vorliebe gemerkt: ${name}`
+        : `${who} saved a preference: ${name}`;
+  }
+  if (a.entity === 'prep' && a.action === 'made') {
+    return de
+      ? `${who} hat ${a.data.ml} ml ${name} angesetzt`
+      : `${who} made ${a.data.ml} ml ${name}`;
+  }
   if (a.entity === 'settings') {
     return de
       ? `${who} hat die Einstellung ${String(a.data.key)} geändert`

@@ -122,6 +122,7 @@ describe('matching', () => {
       tags: [],
       archived: false,
       provides: [],
+      variants: [],
       ...p,
     }) as IngredientView;
   const spec = (p: object) => recipeIngredientSchema.parse({ name: 'x', ...p });
@@ -374,6 +375,7 @@ describe('setup feedback (v1.1)', () => {
       subcategory: null,
       tags: [],
       provides: [],
+      variants: [],
       archived: false,
       ...p,
     }) as IngredientView;

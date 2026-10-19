@@ -28,6 +28,9 @@ const ML_PER_UNIT: Partial<Record<Unit, number>> = {
   barspoon: 5,
   tsp: 5,
   tbsp: 15,
+  // Solids (sugar) are kept in grams; a pack's size and amount are then grams too.
+  g: 1,
+  kg: 1000,
 };
 
 /** Volume in ml, or null for count-like units (piece, wedge, leaf, top ...). */

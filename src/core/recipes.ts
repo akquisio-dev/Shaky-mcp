@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { listEquipment } from '../db/repos/catalog.js';
+import { listCategoryDefaults, listEquipment } from '../db/repos/catalog.js';
 import {
   deleteRecipe as deleteRow,
   findRecipeByName,
@@ -12,6 +12,8 @@ import {
 import { mutate, nowIso, ShakyError, type Ctx } from './context.js';
 import { listIngredientViews } from './inventory.js';
 import { checkRecipe, type Household, type RecipeCheck } from './matching.js';
+import { listPreferences, personalize, type Personalized } from './preferences.js';
+import { drinkStrength, type Strength } from './strength.js';
 import { getSetting } from '../db/repos/misc.js';
 import { recipeInputSchema, type RecipeInput } from './schemas.js';
 
@@ -41,21 +43,46 @@ export interface RecipeFilter {
 }
 
 export interface RecipeWithCheck extends Recipe {
+  /** Checked against the personal version (preferences applied). */
   availability: RecipeCheck;
+  /** How this user makes it: amounts after preferences, and what they avoid. */
+  personal: Personalized;
+  strength: Strength;
 }
 
 function checker(ctx: Ctx) {
   const stock = listIngredientViews(ctx, { include_empty: true });
+  const byId = new Map(stock.map((i) => [i.id, i]));
+  const categories = new Map(listCategoryDefaults(ctx.db).map((c) => [c.category, c]));
   const equipment = listEquipment(ctx.db);
   const household = getSetting<Household>(ctx.db, 'household_substitutes', {});
-  return (r: Recipe) => checkRecipe(r, stock, equipment, household);
+  const prefs = listPreferences(ctx);
+  const drinkG = getSetting<number>(ctx.db, 'standard_drink_g', 10);
+  return (r: Recipe): Omit<RecipeWithCheck, keyof Recipe> => {
+    const personal = personalize(r, prefs);
+    const availability = checkRecipe(
+      { ...r, ingredients: personal.ingredients, steps: personal.steps },
+      stock,
+      equipment,
+      household,
+    );
+    const strength = drinkStrength(
+      personal.ingredients,
+      personal.steps,
+      availability.lines,
+      byId,
+      categories,
+      drinkG,
+    );
+    return { availability, personal, strength };
+  };
 }
 
 export function listRecipesWithCheck(ctx: Ctx, f: RecipeFilter = {}): RecipeWithCheck[] {
   const check = checker(ctx);
   const q = f.search?.trim().toLowerCase();
   return listRecipes(ctx.db)
-    .map((r) => ({ ...r, availability: check(r) }))
+    .map((r) => ({ ...r, ...check(r) }))
     .filter((r) => {
       if (f.tag && !r.tags.includes(f.tag.toLowerCase())) return false;
       if (f.favorite !== undefined && r.favorite !== f.favorite) return false;
@@ -73,11 +100,13 @@ export function listRecipesWithCheck(ctx: Ctx, f: RecipeFilter = {}): RecipeWith
 
 export function getRecipeWithCheck(ctx: Ctx, ref: number | string): RecipeWithCheck {
   const r = resolveRecipe(ctx, ref);
-  return { ...r, availability: checker(ctx)(r) };
+  return { ...r, ...checker(ctx)(r) };
 }
 
 export interface MakeableResult {
   makeable: RecipeCheck[];
+  /** Makeable but with something the user avoids; left out of the lists above. */
+  avoided: { name: string; because: string[] }[];
   missing_one: RecipeCheck[];
   missing_more_count: number;
   /** Only filled with include_missing_more. */
@@ -86,11 +115,18 @@ export interface MakeableResult {
 
 export function findMakeable(
   ctx: Ctx,
-  opts: { tag?: string; include_missing_more?: boolean } = {},
+  opts: { tag?: string; include_missing_more?: boolean; include_avoided?: boolean } = {},
 ): MakeableResult {
-  const all = listRecipesWithCheck(ctx, { tag: opts.tag }).map((r) => r.availability);
+  const recipes = listRecipesWithCheck(ctx, { tag: opts.tag });
+  const avoidedIds = new Set(recipes.filter((r) => r.personal.avoided.length).map((r) => r.id));
+  const all = recipes
+    .filter((r) => opts.include_avoided || !avoidedIds.has(r.id))
+    .map((r) => r.availability);
   const more = all.filter((c) => c.status === 'missing_more');
   return {
+    avoided: recipes
+      .filter((r) => avoidedIds.has(r.id) && !opts.include_avoided)
+      .map((r) => ({ name: r.name, because: r.personal.avoided })),
     makeable: all.filter((c) => c.status === 'makeable'),
     missing_one: all.filter((c) => c.status === 'missing_one'),
     missing_more_count: more.length,

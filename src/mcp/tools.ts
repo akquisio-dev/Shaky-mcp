@@ -16,6 +16,21 @@ import {
 } from '../core/catalog.js';
 import { ShakyError, type Change, type Ctx } from '../core/context.js';
 import { countExampleData, removeExampleData } from '../core/examples.js';
+import {
+  addPreference,
+  describePreference,
+  listPreferences,
+  preferenceInputSchema,
+  removePreference,
+} from '../core/preferences.js';
+import {
+  listTemplates,
+  makePreparation,
+  makeSchema,
+  saveTemplate,
+  templateSchema,
+} from '../core/prep.js';
+import { batchCalculator, batchSchema } from '../core/batch.js';
 import { getAllSettings, settingsSchema, updateSettings } from '../core/settings.js';
 import {
   addIngredient,
@@ -481,6 +496,8 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
         ...(r.rating && { rating: r.rating }),
         status: r.availability.status,
         ...(r.availability.missing.length && { missing: r.availability.missing }),
+        abv: r.strength.abv,
+        ...(r.personal.avoided.length && { avoided: r.personal.avoided }),
       }));
       return ok(`${items.length} recipe(s).`, { items });
     },
@@ -491,7 +508,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     {
       title: 'Get recipe',
       description:
-        'Full recipe with ingredients (each marked available, unavailable or missing, with the matching bottle), structured steps and missing equipment.',
+        "Full recipe with ingredients (each marked available, unavailable or missing, with the matching bottle), structured steps, missing equipment, strength (abv, standard drinks, energy drink warning) and personal: the amounts after the user's preferences. Use personal amounts when telling the user how to mix.",
       input: { recipe: recipeRef },
       readOnly: true,
     },
@@ -570,6 +587,10 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
       input: {
         tag: z.string().optional().describe('Only recipes with this tag, e.g. tiki, longdrink.'),
         include_missing_more: z.boolean().optional(),
+        include_avoided: z
+          .boolean()
+          .optional()
+          .describe('Also list recipes with ingredients the user avoids.'),
       },
       readOnly: true,
     },
@@ -593,6 +614,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
           makeable: r.makeable.map(slim),
           missing_one: r.missing_one.map(slim),
           missing_more_count: r.missing_more_count,
+          ...(r.avoided.length && { left_out_because_avoided: r.avoided }),
           ...(r.missing_more && { missing_more: r.missing_more.map(slim) }),
         },
       );
@@ -684,6 +706,120 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
       return changed(changes.map((c) => c.summary).join(' ') || 'Nothing changed.', changes, {
         ...result,
       });
+    },
+  );
+
+  // ---------- personal taste ----------
+
+  reg(
+    'list_preferences',
+    {
+      title: 'Personal preferences',
+      description:
+        'The user\'s standing adjustments ("0.5 cl less lemon juice in sours") and things they avoid ("tequila"). They are already applied to get_recipe (personal amounts), log_mix, trainings and find_makeable_recipes.',
+      input: {},
+      readOnly: true,
+    },
+    () => {
+      const items = listPreferences(ctx).map((p) => ({ ...p, text: describePreference(p) }));
+      return ok(items.map((p) => p.text).join('; ') || 'No preferences yet.', { items });
+    },
+  );
+
+  reg(
+    'add_preference',
+    {
+      title: 'Remember a preference',
+      description:
+        'Remember the user\'s taste. kind "adjust": change an ingredient\'s amount by delta (in unit, default cl) or factor, optionally only in recipes with a tag (e.g. "sour", also matches the word in the name) or one recipe. kind "avoid": recipes containing that ingredient are left out of suggestions. Saved recipes stay unchanged.',
+      input: preferenceInputSchema.shape,
+    },
+    (a) => {
+      const { result, changes } = addPreference(ctx, a);
+      return changed(`Remembered: ${describePreference(result)}.`, changes, { preference: result });
+    },
+  );
+
+  reg(
+    'remove_preference',
+    {
+      title: 'Forget a preference',
+      description: 'Remove a preference by id (see list_preferences).',
+      input: { id: z.number().int().positive() },
+    },
+    (a) => {
+      const { result, changes } = removePreference(ctx, a.id);
+      return changed(`Forgot: ${describePreference(result)}.`, changes, { removed: result });
+    },
+  );
+
+  // ---------- homemade & batches ----------
+
+  reg(
+    'list_preparations',
+    {
+      title: 'Homemade ingredient recipes',
+      description:
+        'Saved preparations like "Simple syrup 1:1" or "Rich syrup 2:1": inputs (from stock or not, like water), output volume and shelf life.',
+      input: {},
+      readOnly: true,
+    },
+    () => {
+      const items = listTemplates(ctx);
+      return ok(
+        items
+          .map(
+            (t) => `${t.name} (${t.output.ml} ml, keeps ${t.output.shelf_life_days ?? '?'} days)`,
+          )
+          .join('; '),
+        { items },
+      );
+    },
+  );
+
+  reg(
+    'make_preparation',
+    {
+      title: 'Make a homemade ingredient',
+      description:
+        'Make a preparation: takes the inputs out of stock (sugar in g, honey ...) and adds or refills the output bottle with today as its opening date, so its shelf life starts now. Use template (name or id) or custom, and batches or output_ml to scale.',
+      input: makeSchema.shape,
+    },
+    (a) => {
+      const { result, changes } = makePreparation(ctx, a);
+      return changed(`Made ${result.made_ml} ml ${result.template}.`, changes, { ...result });
+    },
+  );
+
+  reg(
+    'save_preparation',
+    {
+      title: 'Save a preparation recipe',
+      description:
+        'Create or replace a homemade ingredient recipe (same name replaces). Units g/kg are fine for sugar.',
+      input: templateSchema.shape,
+    },
+    (a) => {
+      const { result, changes } = saveTemplate(ctx, a);
+      return changed(`Saved preparation ${result.name}.`, changes, { template: result });
+    },
+  );
+
+  reg(
+    'batch_calculator',
+    {
+      title: 'Batch calculator',
+      description:
+        "Scale a recipe (with personal adjustments) to N glasses or a target volume, e.g. for a slush machine: amounts per ingredient, the machine's min/max fill (equipment of type slush_machine with specs min_ml/max_ml), the batch's alcohol percentage and a warning with a top-up amount when it is too strong to freeze (setting slush_max_abv, default 8 %).",
+      input: batchSchema.shape,
+      readOnly: true,
+    },
+    (a) => {
+      const r = batchCalculator(ctx, a);
+      return ok(
+        `${r.recipe}: ${r.total_ml} ml for ${r.glasses} glasses, about ${r.abv} %.${r.warnings.length ? ` ${r.warnings.join(' ')}` : ''}`,
+        { ...r },
+      );
     },
   );
 

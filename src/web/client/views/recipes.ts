@@ -6,6 +6,7 @@ import { attempt, openDialog, toast } from '../lib/ui.js';
 import { filledGlassSvg } from '../game/art.js';
 import { formatAmount } from '../lib/units.js';
 import { openRecipeForm } from './recipeForm.js';
+import { openBatch } from './batch.js';
 
 type Filter = 'all' | 'makeable' | 'missing_one' | 'missing_more' | 'favorites';
 let filter: Filter = 'all';
@@ -55,9 +56,13 @@ function card(r: RecipeWithCheck, rerender: () => void): HTMLElement {
       r.availability.missing.length
         ? h('span', { class: 'missing' }, r.availability.missing.join(', '))
         : null,
+      r.personal.avoided.length ? h('span', { class: 'badge b-low' }, d.recipe.avoided) : null,
+      r.strength.abv > 0 ? h('span', { class: 'muted abv' }, `${fmtNum(r.strength.abv)} %`) : null,
     ),
   );
 }
+
+const fmtNum = (x: number) => String(x).replace('.', t().lang === 'de' ? ',' : '.');
 
 export function renderRecipes(rerender: () => void): HTMLElement {
   const d = t();
@@ -203,7 +208,7 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
   const steps = h(
     'ol',
     { class: 'steps' },
-    r.steps.map((s) =>
+    r.personal.steps.map((s) =>
       h(
         'li',
         null,
@@ -275,8 +280,30 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
           a.substitutes_used.map((s) => d.recipe.using(s.type, s.using)).join(', '),
         )
       : null,
-    r.steps.length ? h('h3', null, d.recipe.steps) : null,
-    r.steps.length ? steps : null,
+    r.personal.adjustments.length
+      ? h(
+          'p',
+          { class: 'personal-note' },
+          d.recipe.yourWay,
+          ' ',
+          r.personal.adjustments
+            .map((x) => `${x.line} ${formatAmount(x.from, x.unit)} → ${formatAmount(x.to, x.unit)}`)
+            .join(', '),
+        )
+      : null,
+    r.personal.avoided.length
+      ? h('p', { class: 'gear-note' }, d.recipe.avoidedNote(r.personal.avoided.join(', ')))
+      : null,
+    r.strength.abv > 0
+      ? h(
+          'p',
+          { class: 'strength' },
+          d.recipe.strength(fmtNum(r.strength.abv), fmtNum(r.strength.standard_drinks)),
+          r.strength.energy ? h('strong', { class: 'energy' }, ` ${d.recipe.energy}`) : null,
+        )
+      : null,
+    r.personal.steps.length ? h('h3', null, d.recipe.steps) : null,
+    r.personal.steps.length ? steps : null,
     h(
       'div',
       { class: 'actions' },
@@ -301,6 +328,7 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
         d.recipe.practice,
       ),
       h('a', { class: 'btn', href: `#/make?recipe=${r.id}`, onclick: () => close() }, d.make.open),
+      h('button', { class: 'btn', type: 'button', onclick: () => openBatch(r) }, d.batch.open),
       h('label', { class: 'check' }, deduct, d.recipe.deduct),
       h(
         'button',

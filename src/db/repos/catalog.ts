@@ -10,20 +10,23 @@ export interface Equipment {
   type: string;
   available: boolean;
   substitutes_for: string[];
+  specs: Record<string, number>;
   notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
-type EquipmentRow = Omit<Equipment, 'available' | 'substitutes_for'> & {
+type EquipmentRow = Omit<Equipment, 'available' | 'substitutes_for' | 'specs'> & {
   available: number;
   substitutes_for: string;
+  specs: string;
 };
 
 const mapEquipment = (r: EquipmentRow): Equipment => ({
   ...r,
   available: r.available === 1,
   substitutes_for: parseJson<string[]>(r.substitutes_for, []),
+  specs: parseJson<Record<string, number>>(r.specs, {}),
 });
 
 export function listEquipment(db: Db): Equipment[] {
@@ -129,6 +132,7 @@ export interface CategoryDefaults {
   bottle_size_ml: number | null;
   color: string;
   container: string | null;
+  abv: number | null;
 }
 
 export function listCategoryDefaults(db: Db): CategoryDefaults[] {
@@ -152,11 +156,11 @@ export function upsertCategoryDefaults(
     ...Object.fromEntries(Object.entries(d).filter(([, v]) => v !== undefined)),
   };
   db.prepare(
-    `INSERT INTO category_defaults (category, shelf_life_days, default_location, bottle_size_ml, color, container)
-     VALUES (@category, @shelf_life_days, @default_location, @bottle_size_ml, @color, @container)
+    `INSERT INTO category_defaults (category, shelf_life_days, default_location, bottle_size_ml, color, container, abv)
+     VALUES (@category, @shelf_life_days, @default_location, @bottle_size_ml, @color, @container, @abv)
      ON CONFLICT (category) DO UPDATE SET shelf_life_days = excluded.shelf_life_days,
        default_location = excluded.default_location, bottle_size_ml = excluded.bottle_size_ml,
-       color = excluded.color, container = excluded.container`,
+       color = excluded.color, container = excluded.container, abv = excluded.abv`,
   ).run({ ...next, category: d.category });
   return getCategoryDefaults(db, d.category)!;
 }

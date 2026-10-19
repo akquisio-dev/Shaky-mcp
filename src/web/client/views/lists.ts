@@ -106,6 +106,14 @@ export function renderGear(): HTMLElement {
       h('input', { name: 'type', required: true, list: 'eq-types', autocomplete: 'off' }),
     ),
     field(d.gear.replaces, h('input', { name: 'substitutes_for', placeholder: 'shaker' })),
+    field(
+      d.gear.minMl,
+      h('input', { name: 'min_ml', type: 'number', min: 0, placeholder: 'slush' }),
+    ),
+    field(
+      d.gear.maxMl,
+      h('input', { name: 'max_ml', type: 'number', min: 0, placeholder: 'slush' }),
+    ),
     h(
       'datalist',
       { id: 'eq-types' },
@@ -122,7 +130,19 @@ export function renderGear(): HTMLElement {
       .filter(Boolean);
     if (
       await attempt(() =>
-        api.saveEquipment({ name: f.get('name'), type: f.get('type'), substitutes_for: subs }),
+        api.saveEquipment({
+          name: f.get('name'),
+          type: f.get('type'),
+          substitutes_for: subs,
+          ...(f.get('min_ml') || f.get('max_ml')
+            ? {
+                specs: {
+                  ...(f.get('min_ml') && { min_ml: Number(f.get('min_ml')) }),
+                  ...(f.get('max_ml') && { max_ml: Number(f.get('max_ml')) }),
+                },
+              }
+            : {}),
+        }),
       )
     )
       eqForm.reset();
@@ -178,6 +198,13 @@ export function renderGear(): HTMLElement {
             h('span', { class: 'gear-name' }, e.name, h('small', null, e.type.replace(/_/g, ' '))),
             e.substitutes_for.length
               ? h('span', { class: 'tag' }, d.gear.substitutes(e.substitutes_for.join(', ')))
+              : null,
+            e.specs.min_ml || e.specs.max_ml
+              ? h(
+                  'span',
+                  { class: 'tag' },
+                  `${e.specs.min_ml ?? '?'} bis ${e.specs.max_ml ?? '?'} ml`,
+                )
               : null,
             h(
               'label',
@@ -259,6 +286,95 @@ export function renderGear(): HTMLElement {
       glForm,
     ),
     renderHousehold(),
+    renderPreferences(),
+  );
+}
+
+/** Personal taste: amount tweaks and things to avoid. */
+function renderPreferences(): HTMLElement {
+  const d = t().prefs;
+  const kind = h(
+    'select',
+    { 'aria-label': d.kind },
+    h('option', { value: 'adjust' }, d.adjust),
+    h('option', { value: 'avoid' }, d.avoid),
+  );
+  const ingredient = h('input', {
+    required: true,
+    placeholder: d.ingredientPh,
+    'aria-label': d.ingredient,
+  });
+  const delta = h('input', {
+    type: 'number',
+    step: '0.25',
+    placeholder: '-0.5',
+    'aria-label': d.delta,
+    class: 'num',
+  });
+  const scope = h('input', { placeholder: d.scopePh, 'aria-label': d.scope });
+  const form = h(
+    'form',
+    { class: 'pref-form' },
+    kind,
+    ingredient,
+    delta,
+    h('span', { class: 'muted' }, 'cl'),
+    scope,
+    h('button', { class: 'btn btn-primary', type: 'submit' }, t().shopping.add),
+  );
+  kind.addEventListener('change', () => {
+    delta.disabled = kind.value === 'avoid';
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = {
+      kind: kind.value,
+      ingredient: ingredient.value,
+      ...(kind.value === 'adjust' && { delta: Number(delta.value.replace(',', '.')), unit: 'cl' }),
+      ...(scope.value.trim() && { recipe_tag: scope.value.trim() }),
+    };
+    if (await attempt(() => api.addPreference(body))) form.reset();
+  });
+  return h(
+    'section',
+    { class: 'paper' },
+    h('h2', null, d.title),
+    h('p', { class: 'muted' }, d.hint),
+    h(
+      'ul',
+      { class: 'gear-list' },
+      state.preferences.map((p) =>
+        h(
+          'li',
+          null,
+          h(
+            'span',
+            { class: 'gear-name' },
+            p.kind === 'avoid'
+              ? d.avoidText(p.ingredient)
+              : d.adjustText(
+                  p.ingredient,
+                  String(p.delta ?? p.factor ?? '').replace('.', t().lang === 'de' ? ',' : '.'),
+                  p.unit ?? 'cl',
+                ),
+            p.recipe_tag || p.recipe
+              ? h('small', null, d.only(p.recipe ?? p.recipe_tag ?? ''))
+              : null,
+          ),
+          h(
+            'button',
+            {
+              class: 'icon-btn',
+              type: 'button',
+              'aria-label': t().gear.remove,
+              onclick: () => attempt(() => api.removePreference(p.id)),
+            },
+            '×',
+          ),
+        ),
+      ),
+    ),
+    form,
   );
 }
 

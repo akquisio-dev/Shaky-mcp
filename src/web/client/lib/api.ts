@@ -6,9 +6,14 @@ import type { IngredientView } from '../../../core/inventory.js';
 import type { RecipeWithCheck, MakeableResult } from '../../../core/recipes.js';
 import type { BarOverview } from '../../../core/overview.js';
 import type { Training } from '../../../core/training.js';
+import type { Preference } from '../../../core/preferences.js';
+import type { Template } from '../../../core/prep.js';
+import type { batchCalculator } from '../../../core/batch.js';
 
 export type {
   Training,
+  Preference,
+  Template,
   Activity,
   Equipment,
   Glass,
@@ -102,5 +107,12 @@ export const api = {
     req<Mut<Training>>('POST', `/trainings/${id}/submit`, { actions }),
   examples: () => req<{ count: number }>('GET', '/examples'),
   removeExamples: () => req<Mut<{ total: number }>>('DELETE', '/examples'),
+  preferences: () => req<Preference[]>('GET', '/preferences'),
+  addPreference: (b: object) => req<Mut<Preference>>('POST', '/preferences', b),
+  removePreference: (id: number) => req<Mut<Preference>>('DELETE', `/preferences/${id}`),
+  preparations: () => req<Template[]>('GET', '/preparations'),
+  makePreparation: (b: object) =>
+    req<Mut<{ made_ml: number; template: string }>>('POST', '/preparations/make', b),
+  batch: (b: object) => req<ReturnType<typeof batchCalculator>>('POST', '/batch', b),
   settings: (b: object) => req<Record<string, unknown>>('PATCH', '/settings', b),
 };
