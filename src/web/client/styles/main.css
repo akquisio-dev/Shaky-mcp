@@ -1469,3 +1469,544 @@ p.small {
     justify-self: end;
   }
 }
+
+/* ---------- mixing game ---------- */
+
+.game-root {
+  display: grid;
+  gap: 1rem;
+}
+
+.game-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.2rem;
+  padding: 0.7rem 1rem;
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.game-hud select {
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--label);
+  color: #2a1810;
+  padding: 0.15rem 0.4rem;
+  font-weight: 600;
+}
+
+.game-hud .glass-icon {
+  width: 18px;
+  height: 26px;
+}
+
+.hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.training-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-basis: 100%;
+  padding: 0.3rem 0.7rem;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--mango);
+  color: #2a1810;
+}
+
+.training-banner .dot {
+  width: 12px;
+  height: 12px;
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.game-stage {
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(360px, 2fr) minmax(220px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.game-shelf {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.game-zone {
+  border: var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  padding: 0.4rem 0.5rem 0.5rem;
+}
+
+.game-zone h3 {
+  font-size: 1rem;
+  margin: 0 0 0.2rem;
+}
+
+.game-zone.zone-shelf {
+  background: var(--paper-2);
+}
+
+.zone-sandbox {
+  background: repeating-linear-gradient(45deg, var(--paper) 0 12px, var(--paper-2) 12px 24px);
+}
+
+.game-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.game-item {
+  display: grid;
+  justify-items: center;
+  width: 64px;
+  padding: 0.2rem 0.1rem;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.game-item svg {
+  width: 30px;
+  height: 60px;
+  pointer-events: none;
+}
+
+.game-item span {
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+
+.game-item:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.game-item.is-selected {
+  border-color: var(--ink);
+  background: var(--mango);
+  color: #2a1810;
+}
+
+.game-counter {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  /* bar counter: wood top edge, tiled front */
+  background:
+    linear-gradient(var(--wood) 0 14px, var(--wood-dark) 14px 18px, transparent 18px),
+    repeating-linear-gradient(90deg, transparent 0 46px, rgba(0, 0, 0, 0.06) 46px 48px),
+    var(--paper-2);
+}
+
+.tool-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.vessel-card {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+
+.vessel-card h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.vessel-glass h3 {
+  font-size: 1.3rem;
+}
+
+.vessel-target {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  border: 3px dashed transparent;
+  border-radius: 18px;
+  padding: 0.3rem 0.6rem;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.has-selection .vessel-target:not(.is-off) {
+  border-color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+.vessel-target.is-target {
+  border-color: var(--hibiscus);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.garnish-target {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.7rem;
+  border: 2px dashed var(--palm);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.garnish-target svg {
+  width: 26px;
+  height: 16px;
+}
+
+.garnish-target.is-target {
+  background: color-mix(in srgb, var(--palm) 25%, transparent);
+  border-style: solid;
+}
+
+.vessel-target.is-off {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.vessel-art svg {
+  display: block;
+  width: 96px;
+  height: 136px;
+}
+
+.vessel-glass .vessel-art svg {
+  width: 150px;
+  height: 212px;
+}
+
+.vessel .glass-fill {
+  fill: var(--glass);
+}
+
+.vessel.chilled .glass-fill {
+  fill: color-mix(in srgb, var(--glass) 60%, #bfe9ff);
+}
+
+.vessel-ml {
+  font-weight: 800;
+  font-size: 0.85rem;
+  min-height: 1.2em;
+}
+
+.vessel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.is-missing h3 {
+  opacity: 0.6;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  25% {
+    transform: translate(-4px, -6px) rotate(-8deg);
+  }
+  75% {
+    transform: translate(4px, 4px) rotate(8deg);
+  }
+}
+
+.vessel-target.shaking .vessel-art {
+  animation: shake 0.22s linear infinite;
+}
+
+.hold-btn {
+  border-radius: 14px;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: auto;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 0.25rem 0.8rem 0.3rem;
+  font-size: 0.85rem;
+  touch-action: none;
+  user-select: none;
+}
+
+.hold-btn.is-holding {
+  background: var(--lagoon);
+  color: #fff8e6;
+}
+
+.hold-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hold-btn .needs {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.meter {
+  display: block;
+  width: 70px;
+  height: 7px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--mango);
+}
+
+.meter-fill.is-done {
+  background: var(--palm);
+}
+
+.meter-s {
+  font-size: 0.72rem;
+  min-height: 1em;
+}
+
+.game-panel {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+}
+
+.game-panel h3 {
+  margin: 0.3rem 0 0;
+}
+
+.game-log {
+  margin: 0;
+  padding-left: 1.2rem;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 0.85rem;
+}
+
+.ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  pointer-events: none;
+  display: grid;
+  justify-items: center;
+}
+
+.ghost svg {
+  width: 60px;
+  height: 120px;
+  transition: transform 0.15s ease;
+  transform-origin: 50% 20%;
+}
+
+.ghost.is-pouring svg {
+  transform: rotate(-120deg);
+}
+
+.pour-count {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: #fff8e6;
+  -webkit-text-stroke: 1.5px #2a1810;
+  paint-order: stroke fill;
+}
+
+body.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.score {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.4rem;
+}
+
+.score svg {
+  width: 120px;
+  height: 170px;
+}
+
+.stars {
+  font-size: 2.6rem;
+  letter-spacing: 0.2rem;
+  color: var(--paper-2);
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+.stars .on {
+  color: var(--mango);
+}
+
+.big-score {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  margin: 0;
+  line-height: 1;
+}
+
+.big-score small {
+  font-size: 1.2rem;
+}
+
+.feedback {
+  text-align: left;
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+@media (max-width: 1100px) {
+  .game-stage {
+    grid-template-columns: 1fr 1.6fr;
+  }
+  .game-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .game-stage {
+    grid-template-columns: 1fr;
+  }
+  .game-counter {
+    order: -1;
+  }
+  .tool-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .vessel-art svg {
+    width: 64px;
+    height: 92px;
+  }
+  .vessel-glass .vessel-art svg {
+    width: 120px;
+    height: 170px;
+  }
+  .hud-actions {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .hold-btn {
+    padding: 0.2rem 0.4rem;
+  }
+  .meter {
+    width: 50px;
+  }
+}
+
+/* Grid children may shrink below their content, long names wrap instead of overflowing. */
+.view > *,
+.game-root > *,
+.game-stage > * {
+  min-width: 0;
+}
+
+.timeline .what {
+  overflow-wrap: anywhere;
+}
+
+.paper input[type='file'],
+.paper select {
+  max-width: 100%;
+}
+
+/* Desktop: the shelf scrolls on its own, so the counter stays in reach while dragging. */
+@media (min-width: 761px) {
+  .game-shelf {
+    position: sticky;
+    top: 0.8rem;
+    max-height: calc(100vh - 1.6rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 0.3rem 0.3rem 0;
+  }
+  .game-panel {
+    position: sticky;
+    top: 0.8rem;
+  }
+}
+
+/* Phone: the shelf becomes a strip pinned to the bottom edge; drag bottles up into the glass. */
+@media (max-width: 760px) {
+  .game-shelf {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overscroll-behavior: contain;
+    margin: 0 -1rem;
+    padding: 0.5rem 1rem;
+    background: var(--page);
+    border-top: var(--line);
+  }
+  .game-zone {
+    flex: none;
+    padding: 0.2rem 0.4rem 0.3rem;
+  }
+  .game-zone h3 {
+    font-size: 0.8rem;
+  }
+  .game-items {
+    flex-wrap: nowrap;
+  }
+  .game-item {
+    width: 56px;
+  }
+  .game-item svg {
+    width: 24px;
+    height: 48px;
+  }
+  .game-stage {
+    gap: 0.8rem;
+  }
+  .game-counter {
+    order: 0;
+  }
+  .game-shelf {
+    order: 1;
+  }
+  .game-panel {
+    order: 2;
+  }
+}

@@ -280,6 +280,11 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
             d.recipe.toShopping,
           )
         : null,
+      h(
+        'a',
+        { class: 'btn', href: `#/mix?recipe=${r.id}`, onclick: () => close() },
+        d.recipe.practice,
+      ),
       h('label', { class: 'check' }, deduct, d.recipe.deduct),
       h(
         'button',

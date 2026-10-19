@@ -4,6 +4,7 @@ export const de: Dict = {
   lang: 'de',
   nav: {
     bar: 'Bar',
+    mix: 'Mixen',
     recipes: 'Rezepte',
     shopping: 'Einkauf',
     gear: 'Ausstattung',
@@ -93,6 +94,7 @@ export const de: Dict = {
     ingredients: 'Zutaten',
     steps: 'Ablauf',
     mixed: 'Gemixt!',
+    practice: 'Im Spiel üben',
     mixedDone: (n) => `Prost! ${n} eingetragen.`,
     deduct: 'Mengen vom Bestand abziehen',
     missingEquipment: 'Fehlende Ausstattung',
@@ -171,6 +173,110 @@ export const de: Dict = {
     empty: 'Noch keine Änderungen.',
     mixes: 'Zuletzt gemixt',
     who: { web: 'Du', mcp: 'Shaky', cli: 'Kommandozeile', system: 'System' },
+  },
+  game: {
+    ice: 'Eis',
+    garnishHere: 'Garnitur: hier ablegen',
+    sandboxShelf: 'Sandbox-Extras',
+    dropHint: 'hierher ziehen oder einschenken',
+    logEmpty: 'Noch nichts eingeschenkt.',
+    log: 'Was du gemacht hast',
+    chooseGlass: 'Glas',
+    guide: 'Rezept',
+    freeStyle: 'Frei mixen',
+    trainingFor: (n) => `Übung: ${n}`,
+    sandbox: 'Sandbox: alles verfügbar',
+    undo: 'Rückgängig',
+    restart: 'Neu anfangen',
+    serve: 'Servieren!',
+    submit: 'An Shaky übergeben',
+    stepsHidden: 'Shaky versteckt diesmal die Schritte. Mix aus dem Kopf.',
+    freeHint: 'Such dir ein Rezept zum Mitmachen aus oder probier einfach.',
+    howTo:
+      'Zieh eine Flasche auf ein Glas oder Werkzeug und halte gedrückt, um einzuschenken. Oder tippe eine Flasche an und halte dann das Glas. Zum Garnieren auf das Feld über dem Glas ziehen.',
+    emptyGlass: 'Das Glas ist noch leer.',
+    yourDrink: 'Dein Drink',
+    summary: (ml, what, abv) =>
+      `${Math.round(ml / 10)} cl aus ${what}${abv !== null ? `, etwa ${String(abv).replace('.', ',')} % Alkohol` : ''}.`,
+    resultTitle: (n) => `${n}: wie lief's?`,
+    needs: (what) => `braucht: ${what}`,
+    rejected: {
+      glass_not_empty: 'Erst das Glas leeren, dann wechseln.',
+      nothing_poured: 'Es wurde nichts eingeschenkt.',
+      nothing_to_muddle: 'Noch nichts zum Muddeln drin.',
+      shaker_empty: 'Der Shaker ist leer.',
+      nothing_to_stir: 'Noch nichts zum Rühren drin.',
+      blender_empty: 'Der Mixer ist leer.',
+      nothing_to_pour: 'Da ist nichts zum Umfüllen.',
+    },
+    verbs: {
+      pour: 'Eingeschenkt',
+      add: 'Dazu',
+      add_ice: 'Eis',
+      garnish: 'Garniert mit',
+      shake: 'Shaken',
+      blend: 'Mixen',
+      stir: 'Rühren',
+      muddle: 'Muddeln',
+      strain: 'Ins Glas abseihen',
+      transfer: 'Ins Glas gießen',
+      chill_glass: 'Glas vorkühlen',
+      choose_glass: 'Glas:',
+      empty: 'Ausleeren',
+    },
+    tools: { shaker: 'Shaker', blender: 'Standmixer', mixing_glass: 'Rührglas' },
+    equipment: {
+      shaker: 'Shaker',
+      blender: 'Standmixer',
+      mixing_glass: 'Rührglas',
+      strainer: 'Barsieb',
+      bar_spoon: 'Barlöffel',
+      muddler: 'Stößel',
+    },
+    glasses: {
+      highball: 'Highball',
+      collins: 'Collins',
+      rocks: 'Tumbler',
+      coupe: 'Coupette',
+      martini: 'Martiniglas',
+      nick_and_nora: 'Nick & Nora',
+      hurricane: 'Hurricane',
+      tiki: 'Tiki-Becher',
+      copper_mug: 'Kupferbecher',
+      wine: 'Weinglas',
+      flute: 'Sektflöte',
+      shot: 'Shotglas',
+    },
+    feedback: (f, fmt) => {
+      const ml = (x?: number) => (x === undefined ? '' : fmt(Math.round(x) / 10, 'cl'));
+      const amt = (x?: number) => (f.unit === 'ml' ? ml(x) : `${x ?? ''} ${f.unit ?? ''}`.trim());
+      const tech: Record<string, string> = {
+        shake: 'Shaken',
+        stir: 'Rühren',
+        blend: 'Mixen',
+        muddle: 'Muddeln',
+      };
+      switch (f.code) {
+        case 'perfect':
+          return 'Perfekt. Du bist ein Barkeeper.';
+        case 'amount_off':
+          return `${f.line}: ${amt(f.actual)} eingeschenkt, laut Rezept ${amt(f.expected)}.`;
+        case 'missing_ingredient':
+          return `${f.line} fehlt.`;
+        case 'extra_ingredient':
+          return `${f.line} gehört hier nicht rein.`;
+        case 'order':
+          return 'Die Reihenfolge war ziemlich anders als im Rezept.';
+        case 'technique_missing':
+          return `${tech[f.technique ?? ''] ?? f.technique} nicht vergessen.`;
+        case 'technique_short':
+          return `${tech[f.technique ?? ''] ?? f.technique}: etwa ${f.expected} s wären richtig, es waren ${f.actual} s.`;
+        case 'garnish_missing':
+          return `Garnitur fehlt: ${f.line}.`;
+        case 'overflow':
+          return `Etwa ${ml(f.actual)} sind übergelaufen.`;
+      }
+    },
   },
   backup: {
     title: 'Sicherung',

@@ -3,7 +3,7 @@ import '@fontsource/baloo-2/latin-400.css';
 import '@fontsource/baloo-2/latin-600.css';
 import '@fontsource/baloo-2/latin-800.css';
 import './styles/main.css';
-import { clear, h, svg } from './lib/h.js';
+import { h, svg } from './lib/h.js';
 import { describe, setLanguage, t } from './lib/i18n.js';
 import { connectLive } from './lib/live.js';
 import { api } from './lib/api.js';
@@ -11,11 +11,12 @@ import { load, loadAll, onChange, slicesFor, state } from './lib/store.js';
 import { toast } from './lib/ui.js';
 import { mascotSvg } from './svg/art.js';
 import { renderBar } from './views/bar.js';
+import { gameView } from './game/scene.js';
 import { renderRecipes, setRecipeFilterFromHash } from './views/recipes.js';
 import { renderActivity, renderGear, renderShopping } from './views/lists.js';
 
-type Route = 'bar' | 'recipes' | 'shopping' | 'gear' | 'activity';
-const ROUTES: Route[] = ['bar', 'recipes', 'shopping', 'gear', 'activity'];
+type Route = 'bar' | 'mix' | 'recipes' | 'shopping' | 'gear' | 'activity';
+const ROUTES: Route[] = ['bar', 'mix', 'recipes', 'shopping', 'gear', 'activity'];
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const main = h('main', { id: 'main', tabIndex: -1 });
@@ -123,11 +124,22 @@ function header(): HTMLElement {
   );
 }
 
+// Header, main and footer are permanent nodes. Only their contents change, so
+// the game scene (which keeps pointer capture during a pour) never leaves the DOM.
+const headerSlot = h('div', { class: 'header-slot' });
+const footer = h('footer', { class: 'foot' });
+
 function render(): void {
   const { name, params } = route();
   const scrollY = window.scrollY;
-  clear(app);
-  clear(main);
+  headerSlot.replaceChildren(header());
+  footer.textContent = `${t().footer} | Shaky ${state.meta?.version ?? ''}`;
+  if (!app.contains(main)) app.append(headerSlot, main, footer);
+  if (name === 'mix') {
+    const scene = gameView(params);
+    if (main.firstChild !== scene) main.replaceChildren(scene);
+    return;
+  }
   let view: HTMLElement;
   switch (name) {
     case 'recipes':
@@ -146,12 +158,7 @@ function render(): void {
     default:
       view = renderBar();
   }
-  main.append(view);
-  app.append(
-    header(),
-    main,
-    h('footer', { class: 'foot' }, t().footer, ` | Shaky ${state.meta?.version ?? ''}`),
-  );
+  main.replaceChildren(view);
   window.scrollTo(0, scrollY);
 }
 

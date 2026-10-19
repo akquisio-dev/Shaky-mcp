@@ -1,6 +1,15 @@
+import type { Feedback } from '../../../game/index.js';
+
 export const en = {
   lang: 'en',
-  nav: { bar: 'Bar', recipes: 'Recipes', shopping: 'Shopping', gear: 'Gear', activity: 'History' },
+  nav: {
+    bar: 'Bar',
+    mix: 'Mix',
+    recipes: 'Recipes',
+    shopping: 'Shopping',
+    gear: 'Gear',
+    activity: 'History',
+  },
   tagline: 'your home bar',
   zones: { shelf: 'Shelf', fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' } as Record<
     string,
@@ -89,6 +98,7 @@ export const en = {
     ingredients: 'Ingredients',
     steps: 'Steps',
     mixed: 'Mixed it!',
+    practice: 'Practice in the game',
     mixedDone: (n: string) => `Cheers! ${n} logged.`,
     deduct: 'Take amounts out of stock',
     missingEquipment: 'Missing gear',
@@ -174,6 +184,107 @@ export const en = {
       string,
       string
     >,
+  },
+  game: {
+    ice: 'Ice',
+    garnishHere: 'Garnish: drop it here',
+    sandboxShelf: 'Sandbox extras',
+    dropHint: 'drop or pour here',
+    logEmpty: 'Nothing poured yet.',
+    log: 'What you did',
+    chooseGlass: 'Glass',
+    guide: 'Recipe',
+    freeStyle: 'Free style',
+    trainingFor: (n: string) => `Training: ${n}`,
+    sandbox: 'Sandbox: everything available',
+    undo: 'Undo',
+    restart: 'Start over',
+    serve: 'Serve!',
+    submit: 'Hand it to Shaky',
+    stepsHidden: 'Shaky hides the steps this time. Mix it from memory.',
+    freeHint: 'Pick a recipe to follow along, or just play.',
+    howTo:
+      'Drag a bottle onto a glass or tool and keep holding to pour. Or tap a bottle, then hold the glass. Drop fruit on the garnish spot above the glass.',
+    emptyGlass: 'The glass is still empty.',
+    yourDrink: 'Your drink',
+    summary: (ml: number, what: string, abv: number | null) =>
+      `${Math.round(ml / 10)} cl of ${what}${abv !== null ? `, about ${abv} % alcohol` : ''}.`,
+    resultTitle: (n: string) => `${n}: how did it go?`,
+    needs: (what: string) => `needs a ${what}`,
+    rejected: {
+      glass_not_empty: 'Empty the glass before switching.',
+      nothing_poured: 'Nothing was poured.',
+      nothing_to_muddle: 'Nothing to muddle yet.',
+      shaker_empty: 'The shaker is empty.',
+      nothing_to_stir: 'Nothing to stir yet.',
+      blender_empty: 'The blender is empty.',
+      nothing_to_pour: 'There is nothing to pour over.',
+    } as Record<string, string>,
+    verbs: {
+      pour: 'Poured',
+      add: 'Added',
+      add_ice: 'Ice',
+      garnish: 'Garnished with',
+      shake: 'Shake',
+      blend: 'Blend',
+      stir: 'Stir',
+      muddle: 'Muddle',
+      strain: 'Strain into glass',
+      transfer: 'Pour into glass',
+      chill_glass: 'Chill glass',
+      choose_glass: 'Glass:',
+      empty: 'Tip out',
+    } as Record<string, string>,
+    tools: { shaker: 'Shaker', blender: 'Blender', mixing_glass: 'Mixing glass' } as Record<
+      string,
+      string
+    >,
+    equipment: {
+      shaker: 'shaker',
+      blender: 'blender',
+      mixing_glass: 'mixing glass',
+      strainer: 'strainer',
+      bar_spoon: 'bar spoon',
+      muddler: 'muddler',
+    } as Record<string, string>,
+    glasses: {
+      highball: 'Highball',
+      collins: 'Collins',
+      rocks: 'Tumbler',
+      coupe: 'Coupe',
+      martini: 'Martini',
+      nick_and_nora: 'Nick & Nora',
+      hurricane: 'Hurricane',
+      tiki: 'Tiki mug',
+      copper_mug: 'Copper mug',
+      wine: 'Wine glass',
+      flute: 'Flute',
+      shot: 'Shot',
+    } as Record<string, string>,
+    feedback: (f: Feedback, fmt: (a?: number, u?: string) => string): string => {
+      const ml = (x?: number) => (x === undefined ? '' : fmt(Math.round(x) / 10, 'cl'));
+      const amt = (x?: number) => (f.unit === 'ml' ? ml(x) : `${x ?? ''} ${f.unit ?? ''}`.trim());
+      switch (f.code) {
+        case 'perfect':
+          return 'Spot on. Bartender material.';
+        case 'amount_off':
+          return `${f.line}: you poured ${amt(f.actual)}, the recipe says ${amt(f.expected)}.`;
+        case 'missing_ingredient':
+          return `${f.line} is missing.`;
+        case 'extra_ingredient':
+          return `${f.line} does not belong in this one.`;
+        case 'order':
+          return 'The order was quite different from the recipe.';
+        case 'technique_missing':
+          return `Don't forget to ${f.technique}.`;
+        case 'technique_short':
+          return `${f.technique}: about ${f.expected} s would be right, you did ${f.actual} s.`;
+        case 'garnish_missing':
+          return `Garnish missing: ${f.line}.`;
+        case 'overflow':
+          return `About ${ml(f.actual)} went over the rim.`;
+      }
+    },
   },
   backup: {
     title: 'Backup',
