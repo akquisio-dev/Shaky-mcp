@@ -43,16 +43,40 @@ const toastHost = () =>
   document.body.appendChild(h('div', { id: 'toasts', 'aria-live': 'polite' }));
 
 /** Comic speech bubble from Shaky. AI changes get the talking mascot. */
-export function toast(text: string, kind: 'ai' | 'you' | 'error' = 'you'): void {
+export function toast(
+  text: string,
+  kind: 'ai' | 'you' | 'error' = 'you',
+  action?: { label: string; run: () => void },
+): void {
   const el = h(
     'div',
     { class: `toast toast-${kind}`, role: kind === 'error' ? 'alert' : 'status' },
     kind === 'ai' ? svg(mascotSvg('talk')) : null,
-    h('p', { class: 'bubble' }, text),
+    h(
+      'p',
+      { class: 'bubble' },
+      text,
+      action
+        ? h(
+            'button',
+            {
+              type: 'button',
+              class: 'toast-action',
+              onclick: () => {
+                el.remove();
+                action.run();
+              },
+            },
+            action.label,
+          )
+        : null,
+    ),
   );
   toastHost().append(el);
-  setTimeout(() => el.classList.add('out'), kind === 'error' ? 6000 : 4200);
-  setTimeout(() => el.remove(), kind === 'error' ? 6600 : 4800);
+  // With an action the bubble stays a little longer, so there is time to click.
+  const ms = kind === 'error' ? 6000 : action ? 8000 : 4200;
+  setTimeout(() => el.classList.add('out'), ms);
+  setTimeout(() => el.remove(), ms + 600);
 }
 
 export async function attempt<T>(fn: () => Promise<T>): Promise<T | undefined> {

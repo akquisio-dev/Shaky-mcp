@@ -2283,3 +2283,14 @@ body.is-dragging {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.toast-action {
+  margin-left: 0.6rem;
+  padding: 0.05rem 0.6rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}

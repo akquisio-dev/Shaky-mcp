@@ -229,3 +229,32 @@ describe('MCP setup tools (v1.1)', () => {
     expect(set.data.settings.household_substitutes.strainer).toBe('fork');
   });
 });
+
+describe('MCP safety net (v1.2)', () => {
+  it('offers dry_run on every mutating tool and changes nothing', async () => {
+    const { tools } = await client.listTools();
+    const mutating = tools.filter((t) => !t.annotations?.readOnlyHint);
+    for (const t of mutating)
+      expect(Object.keys(t.inputSchema.properties ?? {}), t.name).toContain('dry_run');
+    const r = await call('set_fill_level', {
+      ingredient: 'Lillet Blanc',
+      fill_level: 'empty',
+      dry_run: true,
+    });
+    expect(r.text).toMatch(/^Dry run, nothing was saved/);
+    expect(r.data.dry_run).toBe(true);
+    const after = await call('get_ingredient', { ingredient: 'Lillet Blanc' });
+    expect(after.data.fill_level).toBe('half');
+  });
+
+  it('undoes the AI change and restores from the trash', async () => {
+    await call('set_equipment', { name: 'Blender', remove: true });
+    const undone = await call('undo', {});
+    expect(undone.text).toContain('Removed Blender');
+    await call('set_glassware', { name: 'Coupe', remove: true });
+    const trash = await call('trash', {});
+    const coupe = trash.data.items.find((t: { name: string }) => t.name === 'Coupe');
+    const back = await call('trash', { restore: coupe.id });
+    expect(back.data.restored.name).toBe('Coupe');
+  });
+});

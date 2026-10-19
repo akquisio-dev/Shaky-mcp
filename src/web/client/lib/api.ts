@@ -6,12 +6,15 @@ import type { IngredientView } from '../../../core/inventory.js';
 import type { RecipeWithCheck, MakeableResult } from '../../../core/recipes.js';
 import type { BarOverview } from '../../../core/overview.js';
 import type { Training } from '../../../core/training.js';
+import type { TrashItem, UndoGroup } from '../../../core/undo.js';
 import type { Preference } from '../../../core/preferences.js';
 import type { Template } from '../../../core/prep.js';
 import type { batchCalculator } from '../../../core/batch.js';
 
 export type {
   Training,
+  TrashItem,
+  UndoGroup,
   Preference,
   Template,
   Activity,
@@ -114,5 +117,10 @@ export const api = {
   makePreparation: (b: object) =>
     req<Mut<{ made_ml: number; template: string }>>('POST', '/preparations/make', b),
   batch: (b: object) => req<ReturnType<typeof batchCalculator>>('POST', '/batch', b),
+  undoable: () => req<UndoGroup[]>('GET', '/undo'),
+  undo: (b: { group?: number; force?: boolean } = {}) =>
+    req<Mut<{ label: string | null }>>('POST', '/undo', b),
+  trash: () => req<TrashItem[]>('GET', '/trash'),
+  restore: (id: number) => req<Mut<{ name: string }>>('POST', `/trash/${id}/restore`, {}),
   settings: (b: object) => req<Record<string, unknown>>('PATCH', '/settings', b),
 };

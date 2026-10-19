@@ -392,6 +392,25 @@ export const de: Dict = {
     tooStrong: (max, add) =>
       `Zu stark zum Gefrieren (unter ${max} % bleiben). Etwa ${add} ml der alkoholfreien Zutaten dazugeben oder weniger Alkohol nehmen.`,
   },
+  undo: {
+    button: 'Rückgängig',
+    done: 'Rückgängig gemacht.',
+    title: 'Letzte Änderungen',
+    forceConfirm:
+      'Trotzdem rückgängig machen? Spätere Änderungen an denselben Sachen werden überschrieben.',
+    trash: 'Papierkorb',
+    trashHint: 'Gelöschtes der letzten 30 Tage.',
+    restore: 'Wiederherstellen',
+    restored: (n) => `${n} ist wieder da.`,
+    kinds: {
+      ingredient: 'Flasche',
+      equipment: 'Werkzeug',
+      glass: 'Gläser',
+      recipe: 'Rezept',
+      shopping: 'Einkauf',
+      preference: 'Vorliebe',
+    },
+  },
   backup: {
     title: 'Sicherung',
     hint: 'Speichert Flaschen, Ausstattung, Gläser, Rezepte und Einkaufsliste als eine JSON-Datei. Der Verlauf ist nicht enthalten.',

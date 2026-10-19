@@ -28,6 +28,7 @@ import {
 } from '../core/inventory.js';
 import { logMix } from '../core/mixing.js';
 import { exportBar, importBar } from '../core/backup.js';
+import { listTrash, listUndoable, restoreFromTrash, undo } from '../core/undo.js';
 import { addPreference, listPreferences, removePreference } from '../core/preferences.js';
 import { listTemplates, makePreparation, saveTemplate } from '../core/prep.js';
 import { batchCalculator } from '../core/batch.js';
@@ -263,6 +264,17 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
   );
   api.post('/batch', async (c) => c.json(batchCalculator(ctx, (await body(c)) as never)));
 
+  // safety net
+  api.get('/undo', (c) => c.json(listUndoable(ctx, Number(c.req.query('limit') ?? 20))));
+  api.post('/undo', async (c) => {
+    const b = z
+      .object({ group: z.number().int().positive().optional(), force: z.boolean().optional() })
+      .parse(await body(c));
+    return c.json(done(undo(ctx, b)));
+  });
+  api.get('/trash', (c) => c.json(listTrash(ctx)));
+  api.post('/trash/:id/restore', (c) => c.json(done(restoreFromTrash(ctx, id(c)))));
+
   // backup
   api.get('/export', (c) => {
     c.header(
@@ -273,9 +285,16 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
   });
   api.post('/import', async (c) => {
     const b = z
-      .object({ data: z.unknown(), mode: z.enum(['merge', 'replace']).default('merge') })
+      .object({
+        data: z.unknown(),
+        mode: z.enum(['merge', 'replace']).default('merge'),
+        dry_run: z.boolean().optional(),
+      })
       .parse(await body(c));
-    return c.json(done(importBar(ctx, b.data, b.mode)));
+    const target = b.dry_run ? { ...ctx, dryRun: true } : ctx;
+    return c.json(
+      b.dry_run ? importBar(target, b.data, b.mode) : done(importBar(target, b.data, b.mode)),
+    );
   });
 
   // activity & settings

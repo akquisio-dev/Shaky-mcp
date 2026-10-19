@@ -404,6 +404,24 @@ export const en = {
     tooStrong: (max: number, add: number) =>
       `Too strong to freeze well (keep it under ${max} %). Add about ${add} ml of the non-alcoholic parts, or use less spirit.`,
   },
+  undo: {
+    button: 'Undo',
+    done: 'Undone.',
+    title: 'Recent changes',
+    forceConfirm: 'Undo anyway? Later changes to the same items are overwritten.',
+    trash: 'Trash',
+    trashHint: 'Deleted things from the last 30 days.',
+    restore: 'Restore',
+    restored: (n: string) => `${n} is back.`,
+    kinds: {
+      ingredient: 'bottle',
+      equipment: 'equipment',
+      glass: 'glasses',
+      recipe: 'recipe',
+      shopping: 'shopping item',
+      preference: 'preference',
+    } as Record<string, string>,
+  },
   backup: {
     title: 'Backup',
     hint: 'Saves bottles, equipment, glasses, recipes and the shopping list as one JSON file. History is not included.',

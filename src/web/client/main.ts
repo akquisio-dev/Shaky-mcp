@@ -8,7 +8,7 @@ import { describe, setLanguage, t } from './lib/i18n.js';
 import { connectLive } from './lib/live.js';
 import { api } from './lib/api.js';
 import { load, loadAll, onChange, slicesFor, state } from './lib/store.js';
-import { toast } from './lib/ui.js';
+import { attempt, toast } from './lib/ui.js';
 import { mascotSvg } from './svg/art.js';
 import { renderBar } from './views/bar.js';
 import { gameView } from './game/scene.js';
@@ -169,6 +169,7 @@ function render(): void {
 }
 
 let pending: Promise<void> | undefined;
+const toastedGroups = new Set<number>();
 async function boot() {
   await load(['meta']);
   const settings = (state.meta?.settings ?? {}) as Record<string, string>;
@@ -198,7 +199,30 @@ async function boot() {
       const key = `${a.entity}:${a.entity_id}`;
       state.flash.add(key);
       setTimeout(() => state.flash.delete(key), 1200);
-      if (a.source !== 'web') toast(describe(a), a.source === 'mcp' ? 'ai' : 'you');
+      // One bubble per action (group), with an undo button; own edits in the
+      // web UI only get a bubble when they changed several things at once.
+      const group = a.group_id;
+      const first = group === null || group === undefined || !toastedGroups.has(group);
+      if (group !== null && group !== undefined) toastedGroups.add(group);
+      const undoable = a.entity !== 'undo' && a.entity !== 'training' && group != null;
+      const ownButWorthIt =
+        a.entity === 'mix' ||
+        a.action === 'deleted' ||
+        a.action === 'archived' ||
+        a.action === 'examples_removed';
+      if (first && (a.source !== 'web' || ownButWorthIt)) {
+        toast(
+          describe(a),
+          a.source === 'mcp' ? 'ai' : 'you',
+          undoable
+            ? {
+                label: t().undo.button,
+                run: () =>
+                  void attempt(() => api.undo({ group })).then((r) => r && toast(t().undo.done)),
+              }
+            : undefined,
+        );
+      }
       if (a.entity === 'training') onTrainingActivity(a);
       pending = (pending ?? Promise.resolve())
         .then(() => load(slicesFor(a.entity)))

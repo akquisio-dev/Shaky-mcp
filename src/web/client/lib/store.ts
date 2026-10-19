@@ -7,6 +7,8 @@ import {
   type Meta,
   type MixLogEntry,
   type Preference,
+  type TrashItem,
+  type UndoGroup,
   type Template,
   type RecipeWithCheck,
   type ShoppingItem,
@@ -22,6 +24,8 @@ export interface State {
   activity: Activity[];
   mixes: MixLogEntry[];
   preferences: Preference[];
+  undoable: UndoGroup[];
+  trash: TrashItem[];
   preparations: Template[];
   /** Ids that changed through the live feed, for a short wobble. */
   flash: Set<string>;
@@ -37,6 +41,8 @@ type Slice =
   | 'activity'
   | 'mixes'
   | 'preferences'
+  | 'undoable'
+  | 'trash'
   | 'preparations';
 
 export const state: State = {
@@ -48,6 +54,8 @@ export const state: State = {
   activity: [],
   mixes: [],
   preferences: [],
+  undoable: [],
+  trash: [],
   preparations: [],
   flash: new Set(),
 };
@@ -62,6 +70,8 @@ const loaders: Record<Slice, () => Promise<void>> = {
   activity: async () => void (state.activity = await api.activity()),
   mixes: async () => void (state.mixes = await api.mixLog()),
   preferences: async () => void (state.preferences = await api.preferences()),
+  undoable: async () => void (state.undoable = await api.undoable()),
+  trash: async () => void (state.trash = await api.trash()),
   preparations: async () => void (state.preparations = await api.preparations()),
 };
 
@@ -78,6 +88,11 @@ export const loadAll = () => load(Object.keys(loaders) as Slice[]);
 
 /** Which data an activity row invalidates. Recipes depend on stock and gear. */
 export function slicesFor(entity: string): Slice[] {
+  // Any change can be undone, and deletions land in the trash.
+  return [...new Set([...slicesForEntity(entity), 'undoable', 'trash'] as Slice[])];
+}
+
+function slicesForEntity(entity: string): Slice[] {
   switch (entity) {
     case 'ingredient':
     case 'mix':
@@ -94,6 +109,8 @@ export function slicesFor(entity: string): Slice[] {
       return ['preparations', 'ingredients', 'recipes', 'activity'];
     case 'shopping':
       return ['shopping', 'activity'];
+    case 'undo':
+      return Object.keys(loaders) as Slice[];
     case 'location':
     case 'category':
     case 'settings':

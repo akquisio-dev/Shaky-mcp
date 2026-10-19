@@ -449,6 +449,7 @@ function renderHousehold(): HTMLElement {
 }
 
 export function renderActivity(): HTMLElement {
+  exampleCount = null; // recount on every visit: imports and undos change it
   const d = t();
   const fmt = new Intl.DateTimeFormat(d.lang, { dateStyle: 'medium', timeStyle: 'short' });
   return h(
@@ -504,7 +505,99 @@ export function renderActivity(): HTMLElement {
           ),
         )
       : null,
+    renderUndo(),
+    renderTrash(),
     renderBackup(),
+  );
+}
+
+function renderUndo(): HTMLElement | null {
+  const d = t().undo;
+  if (!state.undoable.length) return null;
+  const fmt = new Intl.DateTimeFormat(t().lang, { timeStyle: 'short', dateStyle: 'short' });
+  return h(
+    'section',
+    { class: 'paper' },
+    h('h2', null, d.title),
+    h(
+      'ol',
+      { class: 'timeline' },
+      state.undoable.slice(0, 8).map((g) =>
+        h(
+          'li',
+          { class: `act act-${g.source}` },
+          h('span', { class: `who who-${g.source}` }, t().activity.who[g.source] ?? g.source),
+          h(
+            'span',
+            { class: 'what' },
+            g.first
+              ? describe(
+                  {
+                    id: 0,
+                    at: g.at,
+                    entity_id: null,
+                    summary: g.label ?? '',
+                    ...g.first,
+                    source: g.first.source as never,
+                  },
+                  false,
+                )
+              : (g.label ?? ''),
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'btn btn-small btn-quiet',
+              onclick: async () => {
+                try {
+                  await api.undo({ group: g.id });
+                  toast(d.done);
+                } catch (e) {
+                  if (confirm(`${(e as Error).message}\n\n${d.forceConfirm}`)) {
+                    if (await attempt(() => api.undo({ group: g.id, force: true }))) toast(d.done);
+                  }
+                }
+              },
+            },
+            d.button,
+          ),
+          h('time', { dateTime: g.at }, fmt.format(new Date(g.at))),
+        ),
+      ),
+    ),
+  );
+}
+
+function renderTrash(): HTMLElement | null {
+  const d = t().undo;
+  if (!state.trash.length) return null;
+  return h(
+    'section',
+    { class: 'paper' },
+    h('h2', null, d.trash),
+    h('p', { class: 'muted' }, d.trashHint),
+    h(
+      'ul',
+      { class: 'gear-list' },
+      state.trash.map((x) =>
+        h(
+          'li',
+          null,
+          h('span', { class: 'gear-name' }, x.name, h('small', null, label(d.kinds, x.kind))),
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'btn btn-small',
+              onclick: async () =>
+                (await attempt(() => api.restore(x.id))) && toast(d.restored(x.name)),
+            },
+            d.restore,
+          ),
+        ),
+      ),
+    ),
   );
 }
 

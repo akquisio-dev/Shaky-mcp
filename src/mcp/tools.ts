@@ -16,6 +16,7 @@ import {
 } from '../core/catalog.js';
 import { ShakyError, type Change, type Ctx } from '../core/context.js';
 import { countExampleData, removeExampleData } from '../core/examples.js';
+import { listTrash, listUndoable, restoreFromTrash, undo } from '../core/undo.js';
 import {
   addPreference,
   describePreference,
@@ -147,12 +148,23 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     },
     handler: (args: z.output<z.ZodObject<S>>) => Reply,
   ) => {
+    // Every tool that changes something can be tried first: dry_run runs it,
+    // reports what would change and rolls everything back.
+    const input = config.readOnly
+      ? config.input
+      : {
+          ...config.input,
+          dry_run: z
+            .boolean()
+            .optional()
+            .describe('Only show what would change; nothing is saved. Use before bulk changes.'),
+        };
     server.registerTool(
       name,
       {
         title: config.title,
         description: config.description,
-        inputSchema: config.input,
+        inputSchema: input,
         annotations: {
           readOnlyHint: config.readOnly ?? false,
           destructiveHint: config.destructive ?? false,
@@ -160,11 +172,20 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
         },
       },
       // The SDK has already validated args against the shape.
-      ((args: z.output<z.ZodObject<S>>) => {
+      ((raw: z.output<z.ZodObject<S>> & { dry_run?: boolean }) => {
+        const { dry_run, ...args } = raw;
+        ctx.dryRun = Boolean(dry_run) && !config.readOnly;
         try {
-          return toResult(handler(args));
+          const reply = handler(args as z.output<z.ZodObject<S>>);
+          if (ctx.dryRun) {
+            reply.text = `Dry run, nothing was saved. This would happen: ${reply.text}`;
+            reply.data = { dry_run: true, ...reply.data };
+          }
+          return toResult(reply);
         } catch (e) {
           return toError(e);
+        } finally {
+          ctx.dryRun = false;
         }
       }) as never,
     );
@@ -819,6 +840,63 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
       return ok(
         `${r.recipe}: ${r.total_ml} ml for ${r.glasses} glasses, about ${r.abv} %.${r.warnings.length ? ` ${r.warnings.join(' ')}` : ''}`,
         { ...r },
+      );
+    },
+  );
+
+  // ---------- safety net ----------
+
+  reg(
+    'undo',
+    {
+      title: 'Undo a change',
+      description:
+        'Undo the latest change (any source: web, AI or command line), or a specific one by group id from list_undoable. One group is one action, e.g. a whole log_mix with all its stock deductions. Refuses if the same items changed again later (force overrides). Changes are kept 30 days.',
+      input: { group: z.number().int().positive().optional(), force: z.boolean().optional() },
+    },
+    (a) => {
+      const { result, changes } = undo(ctx, a);
+      return changed(`Undone: ${result.label ?? `change ${result.undone}`}`, changes, {
+        ...result,
+      });
+    },
+  );
+
+  reg(
+    'list_undoable',
+    {
+      title: 'Recent changes that can be undone',
+      description:
+        'The latest change groups with id, time, source and what they did, newest first.',
+      input: { limit: z.number().int().min(1).max(50).default(10) },
+      readOnly: true,
+    },
+    (a) => {
+      const items = listUndoable(ctx, a.limit);
+      return ok(
+        items.map((g) => `#${g.id} ${g.source}: ${g.label ?? ''}`).join('\n') || 'Nothing to undo.',
+        { items },
+      );
+    },
+  );
+
+  reg(
+    'trash',
+    {
+      title: 'Trash',
+      description:
+        'Deleted ingredients, equipment, glasses, recipes, shopping items and preferences from the last 30 days. Pass restore: <id> to put one back with its old id.',
+      input: { restore: z.number().int().positive().optional() },
+    },
+    (a) => {
+      if (a.restore) {
+        const { result, changes } = restoreFromTrash(ctx, a.restore);
+        return changed(`Restored ${result.name}.`, changes, { restored: result });
+      }
+      const items = listTrash(ctx);
+      return ok(
+        items.map((t) => `${t.id}: ${t.kind} ${t.name}`).join(', ') || 'The trash is empty.',
+        { items },
       );
     },
   );

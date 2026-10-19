@@ -82,6 +82,21 @@ function sentence(a: Activity, who: string): string {
       ? `${who} hat ${a.data.ml} ml ${name} angesetzt`
       : `${who} made ${a.data.ml} ml ${name}`;
   }
+  if (a.entity === 'undo') {
+    const of = a.data.of as {
+      entity: string;
+      action: string;
+      data: Record<string, unknown>;
+      source: string;
+    } | null;
+    const original = of
+      ? ({ ...a, ...of, entity_id: null, summary: name } as unknown as Activity)
+      : null;
+    const what = original
+      ? sentence(original, d.activity.who[original.source] ?? original.source).trim()
+      : name;
+    return de ? `${who} hat rückgängig gemacht: ${what}` : `${who} undid: ${what}`;
+  }
   if (a.entity === 'settings') {
     return de
       ? `${who} hat die Einstellung ${String(a.data.key)} geändert`

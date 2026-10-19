@@ -73,6 +73,7 @@ export interface Activity {
   action: string;
   summary: string;
   data: Record<string, unknown>;
+  group_id?: number | null;
 }
 
 type ActivityRow = Omit<Activity, 'data'> & { data: string };
