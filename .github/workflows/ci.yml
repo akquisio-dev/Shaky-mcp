@@ -23,7 +23,16 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+      - name: Install
+        shell: bash
+        # On failure, surface npm's error lines as annotations (visible without log access).
+        run: |
+          npm ci || {
+            for f in "$(npm config get cache)"/_logs/*.log; do
+              grep -E "verbose stack|error" "$f" | tail -8 | while IFS= read -r l; do echo "::error::${l}"; done
+            done
+            exit 1
+          }
       - run: npm run lint
       - run: npm test
       - run: npm run build
