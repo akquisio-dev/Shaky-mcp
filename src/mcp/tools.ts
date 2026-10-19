@@ -38,6 +38,14 @@ import {
   templateSchema,
 } from '../core/prep.js';
 import { batchCalculator, batchSchema } from '../core/batch.js';
+import { applyPartyShopping, partySchema, planParty } from '../core/party.js';
+import {
+  addDietRule,
+  applyDiets,
+  dietRuleInputSchema,
+  listDietRules,
+  removeDietRule,
+} from '../core/diets.js';
 import { getAllSettings, settingsSchema, updateSettings } from '../core/settings.js';
 import {
   addIngredient,
@@ -972,6 +980,103 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
         items.map((t) => `${t.id}: ${t.kind} ${t.name}`).join(', ') || 'The trash is empty.',
         { items },
       );
+    },
+  );
+
+  // ---------- party ----------
+
+  reg(
+    'plan_party',
+    {
+      title: 'Plan a party',
+      description:
+        'For N guests and a few saved drinks: servings per drink (spread evenly unless given), total amounts per bottle vs stock, what to buy (in bottle sizes), ice needed vs ice in the freezer with when to start freezing (party_at), cost, and guest diets (replacements like aquafaba for vegans, drinks that are not for a diet). Changes nothing; party_shopping writes the shopping list.',
+      input: partySchema.shape,
+      readOnly: true,
+    },
+    (a) => {
+      const p = planParty(ctx, a);
+      return ok(
+        `${p.total_drinks} drinks for ${p.guests} guests: ${p.drinks.map((d) => `${d.servings}x ${d.name}`).join(', ')}. ${
+          p.shopping.length
+            ? `To buy: ${p.shopping.map((s) => `${s.name} ${s.quantity}`).join(', ')}.`
+            : 'Everything is in stock.'
+        } Ice: ${p.ice.cubes_needed} cubes${p.ice.cubes_short ? `, ${p.ice.cubes_short} short${p.ice.start_freezing_by ? `, start freezing by ${p.ice.start_freezing_by}` : ''}` : ''}. Cost about ${p.cost.amount} ${p.cost.currency}${p.cost.complete ? '' : ' (some prices missing)'}.`,
+        { ...p },
+      );
+    },
+  );
+
+  reg(
+    'party_shopping',
+    {
+      title: 'Put party needs on the shopping list',
+      description:
+        'Runs plan_party and adds everything missing (and ice if not tracked) to the shopping list with high priority.',
+      input: {
+        ...partySchema.shape,
+        reason: z.string().max(80).optional().describe('e.g. "Party Saturday".'),
+      },
+    },
+    (a) => {
+      const { reason, ...plan } = a;
+      const { result, changes } = applyPartyShopping(ctx, plan, reason ?? 'Party');
+      return changed(`Added ${result.shopping.length} item(s) to the shopping list.`, changes, {
+        shopping: result.shopping,
+      });
+    },
+  );
+
+  reg(
+    'list_diets',
+    {
+      title: 'Guest diets',
+      description:
+        'Diet rules for guests: replacements (vegan: egg white -> aquafaba, honey -> agave) and exclusions (nut allergy: no orgeat). Pass recipe and diets to see a recipe adapted.',
+      input: {
+        recipe: recipeRef.optional(),
+        diets: z.array(z.string()).optional(),
+      },
+      readOnly: true,
+    },
+    (a) => {
+      if (a.recipe) {
+        const r = getRecipeWithCheck(ctx, a.recipe);
+        const d = applyDiets(r.personal, a.diets ?? [], listDietRules(ctx), r.alcohol_free);
+        return ok(
+          `${r.name} for ${(a.diets ?? []).join(', ') || 'everyone'}: ${d.blocked.length ? `not suitable (${d.blocked.map((b) => `${b.diet}: ${b.line}`).join(', ')})` : 'fine'}${d.replaced.length ? `; ${d.replaced.map((x) => `${x.with} instead of ${x.line}`).join(', ')}` : ''}.`,
+          { recipe: r.name, ...d },
+        );
+      }
+      const rules = listDietRules(ctx);
+      return ok([...new Set(rules.map((r) => r.diet))].join(', '), { rules });
+    },
+  );
+
+  reg(
+    'add_diet_rule',
+    {
+      title: 'Add a diet rule',
+      description:
+        'Teach Shaky a guest diet: replace ingredient words with something else, or exclude them.',
+      input: dietRuleInputSchema.shape,
+    },
+    (a) => {
+      const { result, changes } = addDietRule(ctx, a);
+      return changed(`Saved a ${result.diet} rule.`, changes, { rule: result });
+    },
+  );
+
+  reg(
+    'remove_diet_rule',
+    {
+      title: 'Remove a diet rule',
+      description: 'Remove a diet rule by its id from list_diets.',
+      input: { id: z.number().int().positive() },
+    },
+    (a) => {
+      const { result, changes } = removeDietRule(ctx, a.id);
+      return changed(`Removed a ${result.diet} rule.`, changes, { removed: result });
     },
   );
 

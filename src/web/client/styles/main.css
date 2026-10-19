@@ -2330,3 +2330,108 @@ body.is-dragging {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ---------- party ---------- */
+
+.party-picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 0.4rem;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.pick.is-on {
+  background: var(--mango);
+  color: #2a1810;
+}
+
+.pick-name {
+  flex: 1;
+  font-weight: 800;
+}
+
+.pick .sticker {
+  font-size: 0.75rem;
+  transform: none;
+  box-shadow: none;
+  padding: 0 0.4rem;
+}
+
+.party-result {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.print-menu {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+  body > #app > *:not(main),
+  main > .view > *:not(.print-menu),
+  #toasts {
+    display: none !important;
+  }
+  main {
+    padding: 0;
+  }
+  .print-menu {
+    display: block;
+    color: #2a1810;
+    font-family: var(--font-body);
+  }
+  .print-menu h1 {
+    font-size: 2.6rem;
+    text-align: center;
+    margin-bottom: 0.2rem;
+  }
+  .menu-when {
+    text-align: center;
+    margin-top: 0;
+  }
+  .menu-items {
+    display: grid;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+  }
+  .menu-item {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 1rem;
+    align-items: center;
+    break-inside: avoid;
+  }
+  .menu-item svg {
+    width: 70px;
+    height: 100px;
+  }
+  .menu-item h2 {
+    margin: 0;
+  }
+  .menu-item p {
+    margin: 0.2rem 0 0;
+  }
+  .menu-meta {
+    font-weight: 800;
+  }
+  .menu-foot {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+}

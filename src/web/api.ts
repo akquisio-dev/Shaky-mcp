@@ -28,6 +28,8 @@ import {
 } from '../core/inventory.js';
 import { logMix } from '../core/mixing.js';
 import { exportBar, importBar } from '../core/backup.js';
+import { applyPartyShopping, planParty } from '../core/party.js';
+import { addDietRule, listDietRules, removeDietRule } from '../core/diets.js';
 import { addSubstitution, listSubstitutions, removeSubstitution } from '../core/substitutions.js';
 import {
   exportIngredientsCsv,
@@ -270,6 +272,17 @@ export function createApi(db: Db, opts: { onWrite?: () => void } = {}): Hono {
     c.json(done(makePreparation(ctx, (await body(c)) as never)), 201),
   );
   api.post('/batch', async (c) => c.json(batchCalculator(ctx, (await body(c)) as never)));
+
+  // party & diets
+  api.post('/party', async (c) => c.json(planParty(ctx, (await body(c)) as never)));
+  api.post('/party/shopping', async (c) => {
+    const b = await body(c);
+    const { reason, ...plan } = b as { reason?: string };
+    return c.json(done(applyPartyShopping(ctx, plan as never, reason ?? 'Party')));
+  });
+  api.get('/diets', (c) => c.json(listDietRules(ctx)));
+  api.post('/diets', async (c) => c.json(done(addDietRule(ctx, (await body(c)) as never)), 201));
+  api.delete('/diets/:id', (c) => c.json(done(removeDietRule(ctx, id(c)))));
 
   // substitution rules
   api.get('/substitutions', (c) => c.json(listSubstitutions(ctx)));

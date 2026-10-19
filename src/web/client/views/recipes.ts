@@ -287,8 +287,8 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
           'p',
           { class: 'muted' },
           [
-            r.glass ? `${d.recipe.glass}: ${r.glass.replace(/_/g, ' ')}` : null,
-            r.method,
+            r.glass ? `${d.recipe.glass}: ${label(d.game.glasses, r.glass)}` : null,
+            r.method ? label(d.methods, r.method.toLowerCase()) : null,
             r.source === 'ai' ? d.recipe.byAI : null,
           ]
             .filter(Boolean)

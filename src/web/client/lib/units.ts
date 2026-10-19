@@ -1,4 +1,4 @@
-import { t } from './i18n.js';
+import { label, t } from './i18n.js';
 import { state } from './store.js';
 
 const OZ_PER_CL = 1 / 2.957;
@@ -13,5 +13,5 @@ export function formatAmount(a?: number, unit?: string): string {
     u = 'oz';
   }
   const num = String(Math.round(value * 100) / 100).replace('.', t().lang === 'de' ? ',' : '.');
-  return `${num} ${u.replace(/_/g, ' ')}`.trim();
+  return `${num} ${label(t().units, u)}`.trim();
 }

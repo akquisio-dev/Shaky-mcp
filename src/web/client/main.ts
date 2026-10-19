@@ -14,11 +14,12 @@ import { renderBar } from './views/bar.js';
 import { gameView } from './game/scene.js';
 import { checkTrainings, onTrainingActivity } from './game/training.js';
 import { leaveMake, renderMake } from './views/make.js';
+import { renderParty } from './views/party.js';
 import { renderRecipes, setRecipeFilterFromHash } from './views/recipes.js';
 import { renderActivity, renderGear, renderShopping } from './views/lists.js';
 
-type Route = 'bar' | 'mix' | 'recipes' | 'shopping' | 'gear' | 'activity' | 'make';
-const TABS = ['bar', 'mix', 'recipes', 'shopping', 'gear', 'activity'] as const;
+type Route = 'bar' | 'mix' | 'recipes' | 'party' | 'shopping' | 'gear' | 'activity' | 'make';
+const TABS = ['bar', 'mix', 'recipes', 'party', 'shopping', 'gear', 'activity'] as const;
 const ROUTES: Route[] = [...TABS, 'make'];
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -154,6 +155,9 @@ function render(): void {
       break;
     case 'gear':
       view = renderGear();
+      break;
+    case 'party':
+      view = renderParty(render);
       break;
     case 'make':
       view = renderMake(params, render);

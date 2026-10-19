@@ -382,6 +382,18 @@ export function openIngredientForm(i?: IngredientView): void {
       }),
     ),
     field(
+      d.ing.freezeHours,
+      h('input', {
+        name: 'freeze_hours',
+        type: 'number',
+        min: 0,
+        max: 72,
+        step: '0.5',
+        value: i?.freeze_hours ?? '',
+        placeholder: d.ing.freezeHint,
+      }),
+    ),
+    field(
       d.ing.price,
       h('input', { name: 'price', type: 'number', min: 0, step: '0.01', value: i?.price ?? '' }),
     ),
@@ -493,6 +505,7 @@ export function openIngredientForm(i?: IngredientView): void {
       bottle_size_ml: num(f.get('bottle_size_ml')),
       abv: num(f.get('abv')),
       price: num(f.get('price')),
+      freeze_hours: num(f.get('freeze_hours')),
       yield_ml: num(f.get('yield_ml')),
       opened_at: str(f.get('opened_at')),
       shelf_life_days: num(f.get('shelf_life_days')),

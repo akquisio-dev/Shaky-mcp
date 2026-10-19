@@ -195,7 +195,12 @@ export function renderGear(): HTMLElement {
             {
               class: `${e.available ? '' : 'is-off'}${state.flash.has(`equipment:${e.id}`) ? ' wobble' : ''}`,
             },
-            h('span', { class: 'gear-name' }, e.name, h('small', null, e.type.replace(/_/g, ' '))),
+            h(
+              'span',
+              { class: 'gear-name' },
+              e.name,
+              h('small', null, label(t().gearTypes, e.type)),
+            ),
             e.substitutes_for.length
               ? h('span', { class: 'tag' }, d.gear.substitutes(e.substitutes_for.join(', ')))
               : null,
@@ -243,7 +248,12 @@ export function renderGear(): HTMLElement {
           h(
             'li',
             { class: state.flash.has(`glass:${g.id}`) ? 'wobble' : '' },
-            h('span', { class: 'gear-name' }, g.name, h('small', null, g.type.replace(/_/g, ' '))),
+            h(
+              'span',
+              { class: 'gear-name' },
+              g.name,
+              h('small', null, label(t().game.glasses, g.type)),
+            ),
             h(
               'span',
               { class: 'stepper' },

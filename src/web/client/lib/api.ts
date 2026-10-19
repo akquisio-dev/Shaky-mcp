@@ -8,11 +8,15 @@ import type { BarOverview } from '../../../core/overview.js';
 import type { Training } from '../../../core/training.js';
 import type { TrashItem, UndoGroup } from '../../../core/undo.js';
 import type { Substitution } from '../../../core/matching.js';
+import type { PartyPlan } from '../../../core/party.js';
+import type { DietRule } from '../../../core/diets.js';
 import type { Preference } from '../../../core/preferences.js';
 import type { Template } from '../../../core/prep.js';
 import type { batchCalculator } from '../../../core/batch.js';
 
 export type {
+  DietRule,
+  PartyPlan,
   Substitution,
   Training,
   TrashItem,
@@ -129,5 +133,8 @@ export const api = {
   substitutions: () => req<Substitution[]>('GET', '/substitutions'),
   addSubstitution: (b: object) => req<Mut<Substitution>>('POST', '/substitutions', b),
   removeSubstitution: (id: number) => req<Mut<Substitution>>('DELETE', `/substitutions/${id}`),
+  party: (b: object) => req<PartyPlan>('POST', '/party', b),
+  partyShopping: (b: object) => req<Mut<PartyPlan>>('POST', '/party/shopping', b),
+  diets: () => req<DietRule[]>('GET', '/diets'),
   settings: (b: object) => req<Record<string, unknown>>('PATCH', '/settings', b),
 };
