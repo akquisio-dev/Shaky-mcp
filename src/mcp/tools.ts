@@ -640,7 +640,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     'start_training',
     {
       title: 'Start a mixing training',
-      description: `Load a saved recipe as an exercise into the mixing game of the web UI (${webUrl}/#/mix). If the page is open it pops up immediately, otherwise when the user opens it. The user mixes in the game; the server scores amounts, order, technique and garnish. Afterwards call get_training_result. Set show_steps false for an exam from memory, sandbox true to allow ingredients the user does not own. Starting a new training cancels an unfinished one.`,
+      description: `Load a saved recipe as an exercise into the mixing game of the web UI (${webUrl}/#/mix). If the page is open it pops up immediately, otherwise when the user opens it. The user mixes in the game; the server scores amounts, order, technique and garnish. Afterwards call get_training_result. Set show_steps false for an exam from memory. If the bar lacks an ingredient or tool, sandbox mode switches on by default (virtual bottles and tools); pass sandbox false to forbid that. Starting a new training cancels an unfinished one.`,
       input: {
         recipe: recipeRef,
         note: z
@@ -654,10 +654,31 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     },
     (a) => {
       const { result, changes } = startTraining(ctx, a);
+      const t = result.training;
+      const gaps = [
+        ...(result.missing.length ? [`missing ingredients: ${result.missing.join(', ')}`] : []),
+        ...(result.missing_equipment.length
+          ? [`missing equipment: ${result.missing_equipment.join(', ')}`]
+          : []),
+      ];
+      const sandboxNote = gaps.length
+        ? result.sandbox_auto
+          ? ` The bar lacks ${gaps.join('; ')}, so sandbox mode is on and the game offers them virtually.`
+          : t.sandbox
+            ? ''
+            : ` Warning: the bar lacks ${gaps.join('; ')} and sandbox is off, so the user cannot complete it as written.`
+        : '';
       return changed(
-        `Training ${result.id} for ${result.recipe_name} is waiting. Ask the user to open ${webUrl}/#/mix (Mix tab), mix it and hand it in, then call get_training_result.`,
+        `Training ${t.id} for ${t.recipe_name} is waiting. Ask the user to open ${webUrl}/#/mix (Mix tab), mix it and hand it in, then call get_training_result.${sandboxNote}`,
         changes,
-        { training: describeTraining(result), open: `${webUrl}/#/mix` },
+        {
+          training: describeTraining(t),
+          open: `${webUrl}/#/mix`,
+          ...(gaps.length && {
+            missing: result.missing,
+            missing_equipment: result.missing_equipment,
+          }),
+        },
       );
     },
   );

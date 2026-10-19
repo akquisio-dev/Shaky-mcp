@@ -12,7 +12,7 @@ import {
 import { mutate, nowIso, ShakyError, type Ctx } from './context.js';
 import { listIngredientViews } from './inventory.js';
 import { matchesSpec } from './matching.js';
-import { resolveRecipe } from './recipes.js';
+import { getRecipeWithCheck, resolveRecipe } from './recipes.js';
 
 export type TrainingStatus = 'pending' | 'active' | 'done' | 'cancelled';
 
@@ -72,7 +72,8 @@ export const startTrainingSchema = z.object({
   recipe: z.union([z.number().int().positive(), z.string().trim().min(1)]),
   note: z.string().trim().max(300).optional(),
   show_steps: z.boolean().default(true),
-  sandbox: z.boolean().default(false),
+  /** Omitted: on automatically when an ingredient or tool is missing. */
+  sandbox: z.boolean().optional(),
 });
 
 /** Creates a training. Any other open training is cancelled: one at a time. */
@@ -80,6 +81,12 @@ export function startTraining(ctx: Ctx, input: z.input<typeof startTrainingSchem
   const p = startTrainingSchema.parse(input);
   return mutate(ctx, (cs) => {
     const recipe = resolveRecipe(ctx, p.recipe);
+    // A training must be doable: if something is missing, the sandbox fills the gap.
+    const check = getRecipeWithCheck(ctx, recipe.id).availability;
+    const missing = check.missing;
+    const missingEquipment = check.missing_equipment;
+    const blocked = missing.length > 0 || missingEquipment.length > 0;
+    const sandbox = p.sandbox ?? blocked;
     for (const open of listTrainings(ctx, { open: true })) {
       updateRow(ctx.db, 'trainings', open.id, { status: 'cancelled', finished_at: nowIso(ctx) });
       cs.record({
@@ -96,7 +103,7 @@ export function startTraining(ctx: Ctx, input: z.input<typeof startTrainingSchem
       status: 'pending',
       note: p.note ?? null,
       show_steps: p.show_steps,
-      sandbox: p.sandbox,
+      sandbox,
       source: ctx.source,
       created_at: nowIso(ctx),
     });
@@ -107,7 +114,12 @@ export function startTraining(ctx: Ctx, input: z.input<typeof startTrainingSchem
       summary: `Training ready: ${recipe.name}.`,
       data: { name: recipe.name, recipe_id: recipe.id },
     });
-    return getTraining(ctx, id);
+    return {
+      training: getTraining(ctx, id),
+      missing,
+      missing_equipment: missingEquipment,
+      sandbox_auto: p.sandbox === undefined && blocked,
+    };
   });
 }
 

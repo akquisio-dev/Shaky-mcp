@@ -296,6 +296,8 @@ export const de: Dict = {
     withSteps: 'Die Schritte werden beim Mixen angezeigt.',
     fromMemory: 'Diesmal ohne Schritte. Mix aus dem Kopf.',
     later: 'Später',
+    waiting: (n) => `Übung wartet: ${n}`,
+    sandboxOn: 'Sandbox ist an: Was deiner Bar fehlt, gibt es virtuell.',
     go: 'Los geht’s',
     cancelled: 'Shaky hat die Übung abgebrochen.',
     sent: 'Shaky hat dein Ergebnis und kann dir im Chat Feedback geben.',

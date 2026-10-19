@@ -5,6 +5,7 @@ import type { IngredientView } from '../lib/api.js';
 import { bottleSvg } from '../svg/art.js';
 import { daysSince } from '../lib/ui.js';
 import { openIngredient, openIngredientForm } from './ingredient.js';
+import { startWaiting, waitingTraining } from '../game/training.js';
 
 export function badges(i: IngredientView): HTMLElement[] {
   const d = t().badge;
@@ -84,6 +85,22 @@ export function renderBar(): HTMLElement {
     h(
       'div',
       { class: 'bar-summary' },
+      waitingTraining
+        ? h(
+            'div',
+            { class: 'training-banner waiting' },
+            h('strong', null, d.training.waiting(waitingTraining.recipe_name)),
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'btn btn-small btn-primary',
+                onclick: () => void startWaiting(),
+              },
+              d.training.go,
+            ),
+          )
+        : null,
       makeable.length
         ? h(
             'a',

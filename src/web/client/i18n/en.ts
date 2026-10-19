@@ -304,6 +304,8 @@ export const en = {
     withSteps: 'The steps are shown while you mix.',
     fromMemory: 'No steps this time. Mix it from memory.',
     later: 'Later',
+    waiting: (n: string) => `Training waiting: ${n}`,
+    sandboxOn: 'Sandbox is on: what your bar is missing is there virtually.',
     go: "Let's go",
     cancelled: 'Shaky cancelled the training.',
     sent: 'Shaky has your result and can give you feedback in the chat.',

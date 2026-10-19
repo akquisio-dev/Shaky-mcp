@@ -860,6 +860,7 @@ function buildHud(): HTMLElement {
           game.training.note ? h('span', null, game.training.note) : null,
         )
       : null,
+    waitingChip(),
     h('label', { class: 'pref' }, h('span', null, g.guide), guideSel),
     h(
       'label',
@@ -874,6 +875,8 @@ function buildHud(): HTMLElement {
       h('input', {
         type: 'checkbox',
         checked: game.sandbox,
+        // A training fixes the sandbox setting; the server scores by it.
+        disabled: Boolean(game.training),
         onchange: (e: Event) => {
           game.sandbox = (e.target as HTMLInputElement).checked;
           refresh();
@@ -904,6 +907,28 @@ function buildHud(): HTMLElement {
         { type: 'button', class: 'btn btn-primary btn-big', onclick: serve },
         game.training ? g.submit : g.serve,
       ),
+    ),
+  );
+}
+
+/** Set by the training module: an open training that is not running here yet. */
+let waiting: { name: string; start: () => void } | null = null;
+export function setWaitingTraining(w: typeof waiting): void {
+  waiting = w;
+  refresh();
+}
+
+function waitingChip(): HTMLElement | null {
+  if (!waiting || game.training) return null;
+  const w = waiting;
+  return h(
+    'div',
+    { class: 'training-banner waiting' },
+    h('strong', null, t().training.waiting(w.name)),
+    h(
+      'button',
+      { type: 'button', class: 'btn btn-small btn-primary', onclick: () => w.start() },
+      t().training.go,
     ),
   );
 }
@@ -1062,7 +1087,10 @@ export function gameView(params: URLSearchParams): HTMLElement {
   return root;
 }
 
+let sandboxBeforeTraining = false;
+
 export function startTraining(info: TrainingInfo): void {
+  if (!game.training) sandboxBeforeTraining = game.sandbox;
   game.training = info;
   game.sandbox = info.sandbox;
   game.guideId = info.recipe_id;
@@ -1072,6 +1100,7 @@ export function startTraining(info: TrainingInfo): void {
 
 export function endTraining(): void {
   game.training = null;
+  game.sandbox = sandboxBeforeTraining;
   refresh();
 }
 

@@ -1,11 +1,12 @@
 import { h } from '../lib/h.js';
 import { t } from '../lib/i18n.js';
-import { api, type Activity } from '../lib/api.js';
+import { api, type Activity, type Training } from '../lib/api.js';
 import { attempt, openDialog, toast } from '../lib/ui.js';
 import {
   activeTraining,
   endTraining,
   setTrainingSubmit,
+  setWaitingTraining,
   showScore,
   startTraining,
 } from './scene.js';
@@ -16,26 +17,43 @@ import {
 
 const offered = new Set<number>();
 
+/** Open trainings that are waiting, for chips on the bar and mix pages. */
+export let waitingTraining: Training | null = null;
+
+async function begin(tr: Training): Promise<boolean> {
+  const r = await attempt(() => api.startTraining(tr.id));
+  if (!r) return false;
+  waitingTraining = null;
+  setWaitingTraining(null);
+  startTraining({
+    id: tr.id,
+    recipe_id: tr.recipe_id!,
+    note: tr.note,
+    show_steps: tr.show_steps,
+    sandbox: tr.sandbox,
+  });
+  location.hash = '#/mix';
+  return true;
+}
+
+export const startWaiting = () =>
+  waitingTraining ? begin(waitingTraining) : Promise.resolve(false);
+
+/** Looks for an open training; offers a new one once, keeps a chip for later. */
 export async function checkTrainings(): Promise<void> {
   const open = await api.trainings(true).catch(() => []);
   const t0 = open[0];
-  if (!t0 || offered.has(t0.id) || activeTraining()?.id === t0.id) return;
+  if (!t0 || activeTraining()?.id === t0.id) {
+    waitingTraining = null;
+    setWaitingTraining(null);
+    return;
+  }
+  waitingTraining = t0;
+  setWaitingTraining({ name: t0.recipe_name, start: () => void begin(t0) });
+  if (offered.has(t0.id)) return;
   offered.add(t0.id);
   const d = t().training;
   let close = () => {};
-  const begin = async () => {
-    const r = await attempt(() => api.startTraining(t0.id));
-    if (!r) return;
-    close();
-    startTraining({
-      id: t0.id,
-      recipe_id: t0.recipe_id!,
-      note: t0.note,
-      show_steps: t0.show_steps,
-      sandbox: t0.sandbox,
-    });
-    location.hash = '#/mix';
-  };
   close = openDialog(
     d.offerTitle,
     h(
@@ -44,11 +62,20 @@ export async function checkTrainings(): Promise<void> {
       h('p', { class: 'offer-recipe' }, t0.recipe_name),
       t0.note ? h('p', { class: 'bubble' }, t0.note) : null,
       h('p', { class: 'muted' }, t0.show_steps ? d.withSteps : d.fromMemory),
+      t0.sandbox ? h('p', { class: 'muted' }, d.sandboxOn) : null,
       h(
         'div',
         { class: 'actions' },
         h('button', { type: 'button', class: 'btn btn-quiet', onclick: () => close() }, d.later),
-        h('button', { type: 'button', class: 'btn btn-primary btn-big', onclick: begin }, d.go),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'btn btn-primary btn-big',
+            onclick: async () => (await begin(t0)) && close(),
+          },
+          d.go,
+        ),
       ),
     ),
   );
@@ -57,11 +84,11 @@ export async function checkTrainings(): Promise<void> {
 /** Reacts to training rows in the live feed. */
 export function onTrainingActivity(a: Activity): void {
   const current = activeTraining();
-  if (a.action === 'created') void checkTrainings();
   if (a.action === 'cancelled' && current && current.id === a.entity_id) {
     endTraining();
     toast(t().training.cancelled);
   }
+  void checkTrainings();
 }
 
 setTrainingSubmit(async (actions, recipe) => {

@@ -123,6 +123,7 @@ const IMPLIED_EQUIPMENT: Partial<Record<StepAction, string>> = {
   blend: 'blender',
   muddle: 'muddler',
   strain: 'strainer',
+  stir: 'bar_spoon',
 };
 
 export function requiredEquipment(steps: Step[]): string[] {

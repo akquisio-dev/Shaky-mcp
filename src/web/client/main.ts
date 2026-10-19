@@ -178,6 +178,7 @@ async function boot() {
   onChange(render);
   window.addEventListener('hashchange', () => {
     if (route().name !== 'make') leaveMake();
+    if (route().name === 'mix' || route().name === 'bar') void checkTrainings();
     render();
     main.focus({ preventScroll: true });
   });
