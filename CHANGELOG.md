@@ -2,6 +2,18 @@
 
 All notable changes to Shaky. The format follows [Keep a Changelog](https://keepachangelog.com/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-19
+
+### Added
+
+- Undo for any change (one action at a time, also from the AI), a trash for deleted items (30 days) and `dry_run` on every changing MCP tool. Built on a journal of SQLite triggers (migration 006).
+- CSV export and import for ingredients and recipes (comma or semicolon, decimal comma), with a preview.
+- Substitution rules: recipes become "makeable with a stand-in" with a note how the drink changes.
+- Use-up suggestions, cost per drink from bottle prices, alcohol-free filter and five mocktail examples.
+- Ice as an ingredient with freezing time; party planner with shopping, ice timing, cost and a printable drinks menu; guest diets as data.
+- Prompts `add_bottle_from_photo`, `plan_a_party`, `unify_language`; units, methods, glass and equipment types shown in the UI language.
+- 50 MCP tools in total. Migrations 006 and 007.
+
 ## [1.1.0] - 2026-10-19
 
 Based on the first real setup.

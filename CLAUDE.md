@@ -46,6 +46,10 @@ Personal taste (`core/preferences.ts`): `personalize()` returns the user's versi
 
 Containers: `container` + `label_color` per ingredient, category default in `category_defaults.container`. `can` and `fruit` are counted (`counted` in the view): quantity and opened, no fill level. The plain list lives in `core/containers.ts` so the browser bundle does not pull in zod.
 
+Safety net (`src/db/journal.ts`, `core/undo.ts`): triggers on every state table log rows before/after into `undo_log`; `mutate()` opens one `undo_groups` row per top-level call (nested calls join it) and rolls back for `ctx.dryRun`. A new state table must be added to `JOURNALED`. MCP's `reg()` adds `dry_run` to every non-read-only tool.
+
+Party & more: `core/substitutions.ts` (stand-in rules, status `with_substitute`), `core/cost.ts`, `core/csv.ts`, `core/diets.ts`, `core/party.ts` (ice from add_ice steps, freezer stock by category `ice`).
+
 ## Commands
 
 ```bash
@@ -61,4 +65,4 @@ Use `SHAKY_DATA_DIR` pointing to a scratch folder for manual tests. On the dev v
 
 ## Status
 
-Stage 1 (inventory, recipes, web), stage 2 (mixing game, sandbox, mix for real) and stage 3 (AI trainings) are built. Open ideas: a design reference from the owner may still change the look; more glass shapes; sound effects.
+Stage 1 (inventory, recipes, web), stage 2 (mixing game, sandbox, mix for real) and stage 3 (AI trainings) are built, plus the 1.1 and 1.2 feedback rounds (see CHANGELOG). Open ideas: a design reference from the owner may still change the look; more glass shapes; sound effects.

@@ -20,6 +20,13 @@ Next to the MCP server runs a playful web UI on `localhost`: your bar as a comic
 - **Strength per drink**: ABV including melt water, standard drinks, and a warning for energy drink mixes.
 - **Homemade syrups**: make simple syrup 1:1, rich syrup 2:1 or honey syrup from the sugar or honey in stock; the new bottle's shelf life starts today.
 - **Batch calculator**: scale a drink to N glasses, respect a slush machine's minimum and maximum fill, and get a warning with a top-up amount when the batch is too strong to freeze.
+- **Stand-ins**: rules like "ginger ale for ginger beer, milder" or "lemon for lime juice" make a recipe "makeable with a stand-in" instead of "one missing".
+- **Use it up**: drinks that use bottles expiring soon come first.
+- **Cost per drink** from the bottle prices you enter.
+- **Alcohol free**: a filter for mocktails, plus five examples in `examples/mocktails.json`.
+- **Party mode**: pick drinks for N guests and get amounts, what to buy, the ice you need and when to start freezing it, the cost, and a printable drinks menu. Guest diets are data (vegan: aquafaba instead of egg white; nut allergy: no orgeat).
+- **Safety net**: every change can be undone (a whole "Mixed it!" at once), deleted things wait 30 days in the trash, and every changing tool has a dry run.
+- **Photo of a label**: send it to Claude and it fills in brand, kind, ABV and size (prompt `add_bottle_from_photo`).
 - **Log a drink, deduct the stock**: exact for bottles with ml, estimated from the fill level otherwise, limes via juice per piece. When a bottle runs out and you have a spare, the next one is opened.
 - **Trainings**: the AI loads a recipe into the mixing game, you mix it, the server scores amounts, order, technique and garnish, and the AI reads the result to coach you.
 - **Data driven**: equipment (with substitutes like "a jam jar can replace a shaker" and household stand-ins like a spoon for the bar spoon), glasses, storage locations and category defaults are data the AI can change through tools. No code changes needed.
@@ -69,13 +76,13 @@ To update later: `git pull`, `npm install`, `npm run build`. Database migrations
 
 There are two ways to start Shaky. Both use the same database, so you can mix them.
 
-| Command                     | What it does                                                                                                                                                                                          |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node dist/cli.js mcp`      | MCP over **stdio**. This is what Claude Desktop starts. If port 8787 is free it also starts the web UI, so after opening Claude Desktop you can visit http://localhost:8787. Disable with `--no-web`. |
-| `npm start` (`shaky serve`) | Web UI, REST API and MCP over **Streamable HTTP** at `http://localhost:8787/mcp`.                                                                                                                     |
-| `npm run seed`              | Loads `examples/seed.json`. Existing items are kept; `node dist/cli.js seed --reset` wipes the bar first.                                                                                             |
-| `node dist/cli.js export`   | Writes the whole bar as JSON (`export my-bar.json`, or to stdout). `import my-bar.json` merges it back, `--replace` replaces the bar.                                                                 |
-| `npm run doctor`            | Checks Node, database and port, and prints a ready-to-paste Claude Desktop config.                                                                                                                    |
+| Command                     | What it does                                                                                                                                                                                              |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node dist/cli.js mcp`      | MCP over **stdio**. This is what Claude Desktop starts. If port 8787 is free it also starts the web UI, so after opening Claude Desktop you can visit http://localhost:8787. Disable with `--no-web`.     |
+| `npm start` (`shaky serve`) | Web UI, REST API and MCP over **Streamable HTTP** at `http://localhost:8787/mcp`.                                                                                                                         |
+| `npm run seed`              | Loads `examples/seed.json`. Existing items are kept; `node dist/cli.js seed --reset` wipes the bar first.                                                                                                 |
+| `node dist/cli.js export`   | Writes the whole bar as JSON (`export my-bar.json`) or CSV (`export --csv ingredients bar.csv`, `--csv recipes`). `import` reads either; `--replace` replaces the bar, `--dry-run` only shows the result. |
+| `npm run doctor`            | Checks Node, database and port, and prints a ready-to-paste Claude Desktop config.                                                                                                                        |
 
 Settings (environment variable or flag):
 
@@ -145,14 +152,16 @@ Then ask Claude something like _"What can I mix tonight, something fruity?"_, _"
 | Ingredients | `list_ingredients`, `get_ingredient`, `add_ingredient`, `add_ingredients`, `update_ingredient`, `archive_ingredient`, `set_fill_level`, `mark_opened`   |
 | Bar setup   | `list_equipment`, `set_equipment`, `list_glassware`, `set_glassware`, `set_location`, `set_category_defaults`, `update_settings`, `remove_example_data` |
 | Recipes     | `list_recipes`, `get_recipe`, `save_recipe`, `update_recipe`, `delete_recipe`, `find_makeable_recipes`, `log_mix`, `batch_calculator`                   |
-| Taste       | `list_preferences`, `add_preference`, `remove_preference`                                                                                               |
+| Taste       | `list_preferences`, `add_preference`, `remove_preference`, `list_substitutions`, `add_substitution`, `remove_substitution`                              |
 | Homemade    | `list_preparations`, `make_preparation`, `save_preparation`                                                                                             |
+| Party       | `plan_party`, `party_shopping`, `list_diets`, `add_diet_rule`, `remove_diet_rule`                                                                       |
 | Shopping    | `shopping_list_get`, `shopping_list_add`, `shopping_list_update`                                                                                        |
 | Training    | `start_training`, `get_training_result`, `cancel_training`                                                                                              |
+| Safety net  | `undo`, `list_undoable`, `trash`; every changing tool also takes `dry_run: true`                                                                        |
 
 **Resources**: `shaky://bar/overview`, `shaky://inventory`, `shaky://equipment`.
 
-**Prompts**: `suggest_drink` (mood, taste), `use_up_leftovers`.
+**Prompts**: `suggest_drink` (mood, taste), `use_up_leftovers`, `plan_a_party`, `add_bottle_from_photo`, `unify_language`.
 
 Every tool answers with a short readable line plus compact JSON. Tools that change something list exactly what changed. `get_training_result` reports a training as pending until it is handed in, so the AI never has to guess a score.
 
