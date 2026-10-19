@@ -13,6 +13,8 @@ export interface Ingredient {
   origin: string | null;
   abv: number | null;
   color: string | null;
+  container: string | null;
+  label_color: string | null;
   flavor_notes: string | null;
   location: string;
   fill_level: FillLevel;

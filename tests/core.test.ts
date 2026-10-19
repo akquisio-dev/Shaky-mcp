@@ -456,3 +456,24 @@ describe('example data from older bars', () => {
     ]);
   });
 });
+
+describe('containers', () => {
+  it('uses the category default and treats cans and fruit as counted', () => {
+    const ctx = ctxFor(freshDb());
+    const juice = addIngredient(ctx, { name: 'Mango', category: 'juice' }).result;
+    expect(juice.display_container).toBe('tetra_pak');
+    expect(juice.counted).toBe(false);
+    const can = addIngredient(ctx, {
+      name: 'Red Bull',
+      category: 'mixer',
+      container: 'can',
+      label_color: '#2a52be',
+      bottle_size_ml: 250,
+      quantity: 4,
+    }).result;
+    expect(can).toMatchObject({ display_container: 'can', counted: true, label_color: '#2a52be' });
+    expect(can.stock_ml).toBe(1000);
+    const lemon = addIngredient(ctx, { name: 'Lemon', category: 'fruit' }).result;
+    expect(lemon.display_container).toBe('fruit');
+  });
+});

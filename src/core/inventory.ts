@@ -27,6 +27,10 @@ import { expiryInfo, type ExpiryInfo } from './shelfLife.js';
 /** An ingredient plus everything derived from it (expiry, availability ...). */
 export interface IngredientView extends Ingredient, ExpiryInfo {
   fill_fraction: number;
+  /** Container to draw: the item's own or its category's default. */
+  display_container: string;
+  /** Count containers (cans, fruit) show pieces and open/closed instead of a fill level. */
+  counted: boolean;
   /** Usable volume in ml across all bottles (or juice from all pieces), null if unknown. */
   stock_ml: number | null;
   display_color: string;
@@ -49,6 +53,7 @@ export function viewIngredient(
   const fill_fraction =
     i.amount_ml !== null && size ? Math.min(1, i.amount_ml / size) : LEVEL_FRACTION[i.fill_level];
   const empty = i.fill_level === 'empty' || i.quantity <= 0;
+  const container = i.container ?? d?.container ?? 'bottle';
   let stock_ml: number | null = null;
   if (empty) stock_ml = 0;
   else if (i.yield_ml) stock_ml = i.quantity * i.yield_ml;
@@ -62,6 +67,8 @@ export function viewIngredient(
     stock_ml: stock_ml === null ? null : Math.round(stock_ml),
     fill_fraction: Math.round(fill_fraction * 100) / 100,
     display_color: i.color ?? d?.color ?? '#c9a66b',
+    display_container: container,
+    counted: container === 'can' || container === 'fruit',
     low:
       !empty && i.quantity <= 1 && (i.fill_level === 'almost_empty' || i.fill_level === 'quarter'),
     available: !i.archived && !empty && !exp.expired,
@@ -170,6 +177,8 @@ const TRACKED = [
   'provides',
   'abv',
   'color',
+  'container',
+  'label_color',
   'flavor_notes',
   'location',
   'fill_level',

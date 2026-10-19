@@ -682,9 +682,41 @@ button.tag {
 }
 
 .bottle .label {
-  fill: rgba(255, 248, 230, 0.35);
-  stroke: var(--ink);
-  stroke-width: 2;
+  /* see-through enough that the liquid line stays readable */
+  fill-opacity: 0.6;
+}
+
+.bottle.pet .glass {
+  fill: color-mix(in srgb, var(--glass) 70%, #9fd8f0);
+}
+
+.bottle .liquid + path {
+  vector-effect: non-scaling-stroke;
+}
+
+.stepper.big {
+  gap: 0.8rem;
+  font-size: 1.4rem;
+}
+
+.stepper.big .icon-btn {
+  width: 2.6rem;
+  height: 2.6rem;
+}
+
+.color-pair {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.color-pair input[type='color'] {
+  flex: 1;
+}
+
+.recipe-hero .vessel {
+  width: 80px;
+  height: 120px;
 }
 
 .count {
@@ -930,8 +962,7 @@ dialog.sheet::backdrop {
   align-items: center;
 }
 
-.ing-hero svg,
-.recipe-hero svg {
+.ing-hero svg {
   width: 80px;
   height: 150px;
 }

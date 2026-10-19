@@ -2,6 +2,7 @@ import {
   capacityOf,
   glassInfo,
   liquidMl,
+  newGame,
   type GameState,
   type GlassShape,
   type ToolVessel,
@@ -247,3 +248,16 @@ export const iceBucketSvg = `<svg viewBox="0 0 60 120" class="bottle" aria-hidde
 </svg>`;
 
 export { liquidMl };
+
+/** A recipe's glass filled with the drink's color, for recipe pages. */
+export function filledGlassSvg(
+  glass: string | null | undefined,
+  color: string,
+  name: string,
+): string {
+  const s = newGame(glass ?? 'highball');
+  const v = s.vessels.glass;
+  v.ice = 4;
+  v.layers.push({ key: 'drink', label: name, color, ml: capacityOf(s, 'glass') * 0.7 });
+  return glassArt(s, name);
+}

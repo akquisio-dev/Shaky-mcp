@@ -2,8 +2,9 @@ import { h, svg } from '../lib/h.js';
 import { label, t } from '../lib/i18n.js';
 import { state } from '../lib/store.js';
 import { api, type IngredientView } from '../lib/api.js';
+import { CONTAINERS } from '../../../core/containers.js';
 import { attempt, field, openDialog, toast } from '../lib/ui.js';
-import { bottleSvg } from '../svg/art.js';
+import { bottleSvg, ingredientSvg } from '../svg/art.js';
 import { badges } from './bar.js';
 
 const LEVELS = ['full', 'three_quarters', 'half', 'quarter', 'almost_empty', 'empty'];
@@ -47,13 +48,24 @@ export function openIngredient(id: number): void {
     ),
   );
 
+  const counted = i.counted || i.display_container === 'herb';
+  const step = async (by: number) => {
+    const quantity = Math.max(0, i.quantity + by);
+    const r = await attempt(() =>
+      api.updateIngredient(i.id, {
+        quantity,
+        ...(quantity > 0 && i.fill_level === 'empty' ? { fill_level: 'full' } : {}),
+      }),
+    );
+    if (r) close();
+  };
   const body = h(
     'div',
     { class: 'sheet-body ing-detail' },
     h(
       'div',
       { class: 'ing-hero' },
-      svg(bottleSvg(i.category, i.display_color, i.fill_fraction, i.quantity, i.name)),
+      svg(ingredientSvg(i)),
       h(
         'div',
         null,
@@ -63,8 +75,25 @@ export function openIngredient(id: number): void {
         i.notes ? h('p', { class: 'muted' }, i.notes) : null,
       ),
     ),
-    i.category === 'fruit' || i.category === 'garnish' ? null : h('h3', null, d.ing.fill),
-    i.category === 'fruit' || i.category === 'garnish' ? null : levelButtons,
+    counted ? h('h3', null, d.ing.quantity) : h('h3', null, d.ing.fill),
+    // Counted things (cans, fruit, herbs) get a stepper; bottles get the level picker.
+    counted
+      ? h(
+          'div',
+          { class: 'stepper big' },
+          h(
+            'button',
+            { type: 'button', class: 'icon-btn', 'aria-label': '-1', onclick: () => step(-1) },
+            '−',
+          ),
+          h('output', null, String(i.quantity)),
+          h(
+            'button',
+            { type: 'button', class: 'icon-btn', 'aria-label': '+1', onclick: () => step(1) },
+            '+',
+          ),
+        )
+      : levelButtons,
     h(
       'div',
       { class: 'actions' },
@@ -75,7 +104,7 @@ export function openIngredient(id: number): void {
           type: 'button',
           onclick: async () => (await attempt(() => api.open(i.id))) && close(),
         },
-        d.ing.openToday,
+        i.display_container === 'can' ? d.ing.openCan : d.ing.openToday,
       ),
       h(
         'button',
@@ -129,6 +158,16 @@ export function openIngredientForm(i?: IngredientView): void {
     placeholder: 'shelf',
     autocomplete: 'off',
   });
+  const labelOn = h('input', {
+    type: 'checkbox',
+    name: 'label_on',
+    checked: Boolean(i?.label_color),
+  });
+  const labelColor = h('input', {
+    name: 'label_color',
+    type: 'color',
+    value: i?.label_color ?? '#7a4fd1',
+  });
   const color = h('input', {
     name: 'color',
     type: 'color',
@@ -180,6 +219,28 @@ export function openIngredientForm(i?: IngredientView): void {
       }),
     ),
     field(d.ing.location, location),
+    field(
+      d.ing.container,
+      h(
+        'select',
+        { name: 'container' },
+        h('option', { value: '' }, d.ing.containerDefault),
+        CONTAINERS.map((c) =>
+          h('option', { value: c, selected: c === i?.container }, label(d.containers, c)),
+        ),
+      ),
+    ),
+    h(
+      'label',
+      { class: 'field' },
+      h('span', null, d.ing.labelColor),
+      h(
+        'span',
+        { class: 'color-pair' },
+        labelColor,
+        h('label', { class: 'check small' }, labelOn, d.ing.labelColorOn),
+      ),
+    ),
     field(d.ing.color, color),
     field(
       d.ing.fill,
@@ -302,6 +363,8 @@ export function openIngredientForm(i?: IngredientView): void {
       subcategory: str(f.get('subcategory')),
       location: str(f.get('location')) ?? undefined,
       color: String(f.get('color')),
+      container: str(f.get('container')),
+      label_color: labelOn.checked ? String(f.get('label_color')) : null,
       quantity: num(f.get('quantity')) ?? 1,
       bottle_size_ml: num(f.get('bottle_size_ml')),
       abv: num(f.get('abv')),

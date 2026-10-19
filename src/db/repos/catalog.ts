@@ -128,6 +128,7 @@ export interface CategoryDefaults {
   default_location: string;
   bottle_size_ml: number | null;
   color: string;
+  container: string | null;
 }
 
 export function listCategoryDefaults(db: Db): CategoryDefaults[] {
@@ -151,11 +152,11 @@ export function upsertCategoryDefaults(
     ...Object.fromEntries(Object.entries(d).filter(([, v]) => v !== undefined)),
   };
   db.prepare(
-    `INSERT INTO category_defaults (category, shelf_life_days, default_location, bottle_size_ml, color)
-     VALUES (@category, @shelf_life_days, @default_location, @bottle_size_ml, @color)
+    `INSERT INTO category_defaults (category, shelf_life_days, default_location, bottle_size_ml, color, container)
+     VALUES (@category, @shelf_life_days, @default_location, @bottle_size_ml, @color, @container)
      ON CONFLICT (category) DO UPDATE SET shelf_life_days = excluded.shelf_life_days,
        default_location = excluded.default_location, bottle_size_ml = excluded.bottle_size_ml,
-       color = excluded.color`,
+       color = excluded.color, container = excluded.container`,
   ).run({ ...next, category: d.category });
   return getCategoryDefaults(db, d.category)!;
 }

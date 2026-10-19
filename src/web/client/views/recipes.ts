@@ -3,7 +3,7 @@ import { label, t } from '../lib/i18n.js';
 import { state } from '../lib/store.js';
 import { api, type RecipeWithCheck } from '../lib/api.js';
 import { attempt, openDialog, toast } from '../lib/ui.js';
-import { bottleSvg } from '../svg/art.js';
+import { filledGlassSvg } from '../game/art.js';
 import { formatAmount } from '../lib/units.js';
 import { openRecipeForm } from './recipeForm.js';
 
@@ -224,7 +224,7 @@ export async function openRecipe(id: number, rerender: () => void): Promise<void
     h(
       'div',
       { class: 'recipe-hero' },
-      svg(bottleSvg('other', r.color ?? '#ffb21f', 0.8, 1, r.name)),
+      svg(filledGlassSvg(r.glass, r.color ?? '#ffb21f', r.name)),
       h(
         'div',
         null,

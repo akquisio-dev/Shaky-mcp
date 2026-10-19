@@ -218,7 +218,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     {
       title: 'Add ingredient',
       description:
-        'Add a new bottle or item to the bar. Category and fields are free, custom values are fine (e.g. a Monin syrup: category "syrup", subcategory "monin", tags ["passion fruit"]). Pick a hex color that looks like the liquid. Fill level defaults to full. Check list_ingredients first so you do not add a duplicate; to restock an existing item, update its quantity instead.',
+        'Add a new bottle or item to the bar. Category and fields are free, custom values are fine (e.g. a Monin syrup: category "syrup", subcategory "monin", tags ["passion fruit"]). Pick a hex color that looks like the liquid; container and label_color set how it is drawn (a purple can may hold a clear drink). Fill level defaults to full. Check list_ingredients first so you do not add a duplicate; to restock an existing item, update its quantity instead.',
       input: ingredientInputSchema.shape,
     },
     (a) => {
@@ -290,7 +290,7 @@ export function registerTools(server: McpServer, ctx: Ctx, webUrl = 'http://loca
     {
       title: 'Set fill level',
       description:
-        'Set how full the open bottle is: full, three_quarters, half, quarter, almost_empty or empty. Optionally give amount_ml for an exact figure. quantity (number of bottles) is not changed; use update_ingredient for that.',
+        'Set how full the open bottle is: full, three_quarters, half, quarter, almost_empty or empty. For counted containers (cans, fruit) change quantity with update_ingredient and use mark_opened for an opened can instead. Optionally give amount_ml for an exact figure. quantity (number of bottles) is not changed; use update_ingredient for that.',
       input: {
         ingredient: ingredientRef,
         fill_level: fillLevelSchema,

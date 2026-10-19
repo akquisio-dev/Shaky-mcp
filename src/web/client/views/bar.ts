@@ -2,7 +2,7 @@ import { h, svg } from '../lib/h.js';
 import { label, t } from '../lib/i18n.js';
 import { state } from '../lib/store.js';
 import type { IngredientView } from '../lib/api.js';
-import { bottleSvg } from '../svg/art.js';
+import { ingredientSvg } from '../svg/art.js';
 import { daysSince } from '../lib/ui.js';
 import { openIngredient, openIngredientForm } from './ingredient.js';
 import { startWaiting, waitingTraining } from '../game/training.js';
@@ -16,10 +16,12 @@ export function badges(i: IngredientView): HTMLElement[] {
     return out;
   }
   if (i.low) out.push(h('span', { class: 'badge b-low' }, d.low));
+  if (i.display_container === 'can' && i.opened_at)
+    out.push(h('span', { class: 'badge b-open' }, d.canOpen));
   if (i.expired) out.push(h('span', { class: 'badge b-expired' }, d.expired));
   else if (i.expiring_soon && i.days_left !== null)
     out.push(h('span', { class: 'badge b-soon' }, d.useIn(i.days_left)));
-  else if (i.opened_at && i.days_left !== null)
+  else if (i.opened_at && i.days_left !== null && i.display_container !== 'can')
     out.push(h('span', { class: 'badge b-open' }, d.openedDays(daysSince(i.opened_at))));
   return out;
 }
@@ -38,21 +40,14 @@ function bottle(i: IngredientView): HTMLElement {
     h(
       'span',
       { class: 'bottle-art' },
-      svg(
-        bottleSvg(
-          i.category,
-          i.display_color,
-          i.fill_fraction,
-          i.quantity,
-          `${i.name}, ${fillName}`,
-        ),
-      ),
-      i.quantity > 1 && i.category !== 'fruit'
+      svg(ingredientSvg(i)),
+      i.quantity > 1 && !i.counted
         ? h('span', { class: 'count' }, t().badge.count(i.quantity))
         : null,
     ),
     h('span', { class: 'bottle-name' }, i.name),
-    i.category === 'fruit' || i.category === 'garnish'
+    // Cans and fruit are counted: a fill level makes no sense there.
+    i.counted || i.display_container === 'herb'
       ? h('span', { class: 'bottle-sub' }, t().badge.count(i.quantity))
       : h(
           'span',

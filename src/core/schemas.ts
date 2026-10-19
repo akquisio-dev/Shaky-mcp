@@ -93,6 +93,15 @@ export const UNITS = [
 ] as const;
 export type Unit = (typeof UNITS)[number];
 
+import { CONTAINERS } from './containers.js';
+export { CONTAINERS };
+export type { Container } from './containers.js';
+export const containerSchema = z
+  .enum(CONTAINERS)
+  .describe(
+    'How it looks in the bar: bottle, bottle_round (bulbous), bottle_flat, bottle_square, wine_bottle, syrup_bottle (slim with pourer), dropper (bitters), small_bottle, can (use quantity and opened, no fill level), tetra_pak, pet_bottle, carton, freezer_bag, jar, pack (e.g. sugar), fruit (counted pieces), herb.',
+  );
+
 export const SOURCES = ['web', 'mcp', 'cli', 'system'] as const;
 export type Source = (typeof SOURCES)[number];
 
@@ -155,6 +164,10 @@ export const ingredientInputSchema = z.object({
     ),
   abv: z.number().min(0).max(100).nullish(),
   color: hexColorSchema.nullish(),
+  container: containerSchema.nullish().describe('Omit to use the category default.'),
+  label_color: hexColorSchema
+    .nullish()
+    .describe('Color of the label, or of the whole can/carton. Separate from the liquid color.'),
   flavor_notes: z.string().trim().max(300).nullish(),
   location: locationKeySchema.optional(),
   fill_level: fillLevelSchema.optional(),
@@ -312,4 +325,5 @@ export const categoryDefaultsInputSchema = z.object({
   default_location: locationKeySchema.optional(),
   bottle_size_ml: z.number().positive().nullable().optional(),
   color: hexColorSchema.optional(),
+  container: containerSchema.optional(),
 });

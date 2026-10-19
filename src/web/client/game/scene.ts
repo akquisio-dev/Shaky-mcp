@@ -20,7 +20,7 @@ import { state } from '../lib/store.js';
 import type { IngredientView, RecipeWithCheck } from '../lib/api.js';
 import { openDialog, toast } from '../lib/ui.js';
 import { formatAmount } from '../lib/units.js';
-import { bottleSvg } from '../svg/art.js';
+import { bottleSvg, ingredientSvg } from '../svg/art.js';
 import { glassArt, glassIcon, iceBucketSvg, toolArt } from './art.js';
 
 // The mixing game scene. It is built once and kept alive across re-renders,
@@ -37,6 +37,8 @@ interface Item {
   fraction: number;
   source: Source;
   abv?: number | null;
+  /** The inventory item behind a real bottle (for drawing its container). */
+  ing?: IngredientView;
   /** Recipe line names this item can stand for, by purpose. */
   lines?: { pour?: string; garnish?: string };
 }
@@ -133,6 +135,7 @@ function items(): Item[] {
       fraction: game.sandbox ? Math.max(i.fill_fraction, 0.6) : i.fill_fraction,
       abv: i.abv,
       source: { label: i.name, color: i.display_color, ingredient_id: i.id },
+      ing: i,
       lines: linesFor(i, r),
     }));
   if (game.sandbox) {
@@ -587,7 +590,11 @@ function buildShelf(): HTMLElement {
       },
       it.kind === 'ice'
         ? svg(iceBucketSvg)
-        : svg(bottleSvg(it.category, it.source.color, it.fraction, 1, it.source.label)),
+        : svg(
+            it.ing
+              ? ingredientSvg({ ...it.ing, fill_fraction: it.fraction })
+              : bottleSvg(it.category, it.source.color, it.fraction, 1, it.source.label),
+          ),
       h('span', null, it.source.label),
     );
     el.addEventListener('pointerdown', (e) => onItemDown(e, it, el));
